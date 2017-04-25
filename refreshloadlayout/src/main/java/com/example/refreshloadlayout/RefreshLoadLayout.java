@@ -28,11 +28,14 @@ public class RefreshLoadLayout extends ViewGroup {
 
     private View mTarget;
 
-    private RefreshIndicator refreshIndicator;
+    private RefreshIndicator mRefreshIndicator;
+
+    private LoadMoreIndicator mLoadMoreIndicator;
 
     private OnRefreshListener mOnRefreshListener;
 
-    private OnLoadingListener mOnLoadingListener;
+    private LoadingHandler mLoadingHandler;
+
 
     private int mTouchSlop;
 
@@ -51,17 +54,19 @@ public class RefreshLoadLayout extends ViewGroup {
     /**
      * 是否启用下拉刷新
      */
-    private boolean isRefreshingEnabled;
+    private boolean refreshingEnabled;
 
     /**
      * 是否启用加载更多
      */
-    private boolean isLoadingEnabled;
+    private boolean loadingEnabled;
 
     /**
      * 触发刷新所需的滑动距离,默认为刷新视图的高度
      */
     private int triggerDistance;
+
+    private int loadIndicatorHeight;
 
     private OnTargetScrollDownCallback mOnTargetScrollDownCallback;
 
@@ -84,18 +89,25 @@ public class RefreshLoadLayout extends ViewGroup {
             throw new IllegalStateException("Only support one child");
         }
         mTouchSlop= ViewConfiguration.get(context).getScaledTouchSlop();
-        addDefaultRefreshView(context);
+        if (refreshingEnabled){
+            addDefaultRefreshView();
+        }
+        if (loadingEnabled){
+            addDefaultLoadingIndicator();
+        }
     }
 
-    private void addDefaultRefreshView(Context context) {
-        refreshIndicator = new DefaultRefreshIndicator(context);
-
-        addView((View) refreshIndicator,LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+    private void addDefaultLoadingIndicator() {
+        mLoadMoreIndicator =new DefaultLoadingMoreIndicator(getContext());
+        addView((View) mLoadMoreIndicator, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
     }
 
-    public void setOnRefreshListener(OnRefreshListener onRefreshListener){
-        mOnRefreshListener=onRefreshListener;
+    private void addDefaultRefreshView() {
+        mRefreshIndicator = new DefaultRefreshIndicator(getContext());
+        addView((View) mRefreshIndicator,LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
     }
+
+
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -108,15 +120,15 @@ public class RefreshLoadLayout extends ViewGroup {
             return;
         }
         measureChildren(widthMeasureSpec, heightMeasureSpec);
-        if (triggerDistance==0){
-            triggerDistance = ((View)refreshIndicator).getMeasuredHeight();
+        if (triggerDistance==0 && mRefreshIndicator!=null){
+            triggerDistance = ((View) mRefreshIndicator).getMeasuredHeight();
         }
     }
 
     private void findTarget() {
         for (int i = 0; i < getChildCount(); i++) {
             View view = getChildAt(i);
-            if (view != refreshIndicator) {
+            if (view != mRefreshIndicator) {
                 mTarget = view;
                 break;
             }
@@ -134,14 +146,22 @@ public class RefreshLoadLayout extends ViewGroup {
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
         mTarget.layout(getPaddingLeft(), getPaddingTop(), width - getPaddingRight(), height - getPaddingBottom());
-        int refreshViewHeight = ((View)refreshIndicator).getMeasuredHeight();
-        ((View)refreshIndicator).layout(0, -refreshViewHeight, width, 0);
+        if (mRefreshIndicator!=null){
+            int refreshViewHeight = ((View) mRefreshIndicator).getMeasuredHeight();
+            ((View) mRefreshIndicator).layout(0, -refreshViewHeight, width, 0);
+        }
+        if (mLoadMoreIndicator!=null){
+            loadIndicatorHeight=((View)mLoadMoreIndicator).getMeasuredHeight();
+            ((View) mLoadMoreIndicator).layout(0, height, width, height+loadIndicatorHeight);
+        }
     }
 
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
+        findTarget();
+        Log.d(TAG,(mTarget==null)+"");
         if (mTarget!=null){
             if (mTarget instanceof AbsListView){
                 setAbsListViewOnScrollListener((AbsListView) mTarget);
@@ -169,16 +189,10 @@ public class RefreshLoadLayout extends ViewGroup {
                 }
                 if (dy>0){
                     //手指向下移动，下拉
-                    return !canChildScrollUp();
+                    return refreshingEnabled&&!canChildScrollUp();
                 }else {
                     //手指向上移动，上滑
-                    if (canChildScrollDown()){
-                        return false;
-                    }else {
-                        //直接拦截并开始加载
-                        startLoading();
-                        return true;
-                    }
+                    return canLoadingMore();
                 }
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
@@ -210,48 +224,53 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
     private boolean handleUpEvent(MotionEvent event) {
-
-        Log.d(TAG,"handleUpEvent scrollY:"+getScrollY()+"triggerDistance:"+triggerDistance);
-        if (-getScrollY()>=triggerDistance){
-            startRefreshing();
-            Log.d(TAG,"释放时达到刷新距离，开始刷新");
-        }else {
-            scrollTo(0,0);
+        if (mLoadingMore||mRefreshing){
+            return false;
         }
-        return true;
+        int dy= (int) (event.getY()-initialY);
+        if (dy>0&&refreshingEnabled){
+            int scrollY=getScrollY();
+            if (scrollY<0){
+                if (-scrollY>=triggerDistance){
+                    startRefreshing();
+                }else {
+                    scrollTo(0,0);
+                }
+                return true;
+            }
+        }
+
+        return tryLoadingMore();
     }
 
     private boolean handleMoveEvent(MotionEvent event) {
+        if (mLoadingMore||mRefreshing){
+            return false;
+        }
         float y=event.getY();
         int dy= (int) (y-initialY);
         if (dy>0){
             //手指向下移动，下拉
+            if (!refreshingEnabled){
+                return false;
+            }
             int offset=(int) (dy*DRAG_RATE);
             scrollTo(0, -offset);
             Log.d(TAG,"dy:"+dy+" scrollY:"+getScrollY()+" offset:"+offset);
             if (offset<triggerDistance){
-                refreshIndicator.onPullDown(this);
+                mRefreshIndicator.onPullDown(this);
             }else {
-                refreshIndicator.onQualifiedRefreshing(this);
+                mRefreshIndicator.onQualifiedRefreshing(this);
             }
         }else {
             //手指向上移动，上滑
-            if (mLoadingMore){
-                return true;
-            }
+            return tryLoadingMore();
+
         }
         return false;
     }
 
-    public void setRefreshIndicator(RefreshIndicator refreshIndicator){
-        if (refreshIndicator==null){
-            return;
-        }
-        if (!(refreshIndicator instanceof View)){
-            throw new IllegalArgumentException("RefreshIndicator must be a view");
-        }
-        this.refreshIndicator=refreshIndicator;
-    }
+
 
     /**
      * @return Whether it is possible for the child view of this layout to
@@ -279,6 +298,58 @@ public class RefreshLoadLayout extends ViewGroup {
         mOnTargetScrollUpCallback = callback;
     }
 
+    public boolean isRefreshingEnabled() {
+        return refreshingEnabled;
+    }
+
+    public void setRefreshingEnabled(boolean refreshingEnabled) {
+        this.refreshingEnabled = refreshingEnabled;
+        if (mRefreshIndicator==null){
+            addDefaultRefreshView();
+        }
+    }
+
+    public boolean isLoadingEnabled() {
+        return loadingEnabled;
+    }
+
+    public void setLoadingEnabled(boolean loadingEnabled) {
+        this.loadingEnabled = loadingEnabled;
+        if (mLoadMoreIndicator==null){
+            addDefaultLoadingIndicator();
+        }
+    }
+
+    public void setRefreshIndicator(RefreshIndicator refreshIndicator){
+        if (refreshIndicator ==null){
+            return;
+        }
+        if (!(refreshIndicator instanceof View)){
+            throw new IllegalArgumentException("RefreshIndicator must be a view");
+        }
+        if (mRefreshIndicator!=null){
+            removeView((View) mRefreshIndicator);
+        }
+        addView((View) refreshIndicator,LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+        mRefreshIndicator = refreshIndicator;
+    }
+
+    public void setOnRefreshListener(OnRefreshListener onRefreshListener){
+        mOnRefreshListener=onRefreshListener;
+    }
+
+    /**
+     * 设置加载处理器
+     * @param loadingHandler
+     */
+    public void setLoadingHandler(LoadingHandler loadingHandler) {
+        this.mLoadingHandler = loadingHandler;
+    }
+
+    public boolean isLoadingMore() {
+        return mLoadingMore;
+    }
+
     public boolean isRefreshing(){
         return mRefreshing;
     }
@@ -288,7 +359,7 @@ public class RefreshLoadLayout extends ViewGroup {
             return;
         }
         scrollTo(0,0);
-        refreshIndicator.onEndRefreshing(this);
+        mRefreshIndicator.onEndRefreshing(this);
         mRefreshing =false;
     }
 
@@ -297,7 +368,10 @@ public class RefreshLoadLayout extends ViewGroup {
             // Already on refreshing
             return;
         }
-        refreshIndicator.onStartRefreshing(this);
+        refreshingEnabled=true;
+        if (mRefreshIndicator !=null){
+            mRefreshIndicator.onStartRefreshing(this);
+        }
         scrollTo(0,-triggerDistance);
         mRefreshing =true;
         if (mOnRefreshListener!=null){
@@ -305,18 +379,51 @@ public class RefreshLoadLayout extends ViewGroup {
         }
     }
 
+    private boolean tryLoadingMore(){
+        if (canLoadingMore()){
+            startLoading();
+            return true;
+        }
+        return false;
+    }
+
     private boolean canLoadingMore(){
-        if (mLoadingMore||canChildScrollDown()){
+        if (!loadingEnabled||mLoadingMore||canChildScrollDown()||mLoadingHandler==null){
             return false;
         }
-        return true;
+        return mLoadingHandler.canLoadMore();
     }
 
     /**
-     * 开始加载更多
+     * 开始加载更多o
      */
     public void startLoading(){
+        if (mLoadingMore){
+            return;
+        }
 
+        mLoadingMore=true;
+
+        if (mLoadingHandler !=null){
+            mLoadingHandler.onLoading();
+        }
+        if (mLoadMoreIndicator !=null){
+            mLoadMoreIndicator.onStartLoading(this);
+            scrollTo(0,loadIndicatorHeight);
+        }
+    }
+
+    /**
+     * 结束加载更多
+     */
+    public void endLoading(){
+        if (mLoadingMore){
+            mLoadingMore=false;
+            scrollTo(0,0);
+            if (mLoadMoreIndicator!=null){
+                mLoadMoreIndicator.onEndLoading(this);
+            }
+        }
     }
 
 
@@ -326,8 +433,8 @@ public class RefreshLoadLayout extends ViewGroup {
             recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
                 @Override
                 public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                    if ((newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING)&& canLoadingMore()) {
-                        startLoading();
+                    if ((newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING)) {
+                        tryLoadingMore();
                     }
                 }
             });
@@ -339,8 +446,7 @@ public class RefreshLoadLayout extends ViewGroup {
     private void setAbsListViewOnScrollListener(AbsListView absListView) {
         if (absListView != null) {
             try {
-                // 通过反射获取开发者自定义的滚动监听器，并将其替换成自己的滚动监听器，触发滚动时也要通知开发者自定义的滚动监听器（非侵入式，不让开发者继承特定的控件）
-                // mAbsListView.getClass().getDeclaredField("mOnScrollListener")获取不到mOnScrollListener，必须通过AbsListView.class.getDeclaredField("mOnScrollListener")获取
+                // 通过反射获取滚动监听器，设置自己的滚动监听器后通知之前已有的监听
                 Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
                 field.setAccessible(true);
                 // 开发者自定义的滚动监听器
@@ -348,8 +454,9 @@ public class RefreshLoadLayout extends ViewGroup {
                 absListView.setOnScrollListener(new AbsListView.OnScrollListener() {
                     @Override
                     public void onScrollStateChanged(AbsListView absListView, int scrollState) {
-                        if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)&&canLoadingMore()) {
-                            startLoading();
+                        Log.d(TAG,scrollState+"");
+                        if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)) {
+                            tryLoadingMore();
                         }
 
                         if (onScrollListener != null) {
@@ -370,15 +477,27 @@ public class RefreshLoadLayout extends ViewGroup {
         }
     }
 
-
+    /**
+     * 下拉刷新监听
+     */
     public interface OnRefreshListener{
         void onRefresh();
     }
 
-    public interface OnLoadingListener{
-        void OnLoading();
-    }
+    /**
+     * 上滑加载处理器
+     */
+    public interface LoadingHandler {
+        /**
+         * 检查是否可以加载更多
+         */
+        boolean canLoadMore();
 
+        /**
+         * 加载回调
+         */
+        void onLoading();
+    }
 
 
     public interface OnTargetScrollUpCallback{
