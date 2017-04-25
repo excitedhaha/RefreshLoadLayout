@@ -9,20 +9,20 @@ public interface RefreshIndicator {
     /**
      * 下拉中，但未到达刷新距离
      */
-    void onPullDown();
+    void onPullDown(RefreshLoadLayout refreshLoadLayout);
 
     /**
      * 满足刷新条件
      */
-    void onQualifiedRefreshing();
+    void onQualifiedRefreshing(RefreshLoadLayout refreshLoadLayout);
 
     /**
      * 开始刷新
      */
-    void onStartRefreshing();
+    void onStartRefreshing(RefreshLoadLayout refreshLoadLayout);
 
     /**
      * 结束刷新
      */
-    void onEndRefreshing();
+    void onEndRefreshing(RefreshLoadLayout refreshLoadLayout);
 }

@@ -77,7 +77,7 @@ public class DefaultRefreshIndicator extends LinearLayout implements RefreshIndi
 
 
     @Override
-    public void onPullDown() {
+    public void onPullDown(RefreshLoadLayout refreshLoadLayout) {
         textView.setText(R.string.pull_down_refresh);
         if (!arrowDown){
             flipArrowDown();
@@ -85,7 +85,7 @@ public class DefaultRefreshIndicator extends LinearLayout implements RefreshIndi
     }
 
     @Override
-    public void onQualifiedRefreshing() {
+    public void onQualifiedRefreshing(RefreshLoadLayout refreshLoadLayout) {
         textView.setText(R.string.release_refresh);
         if (arrowDown){
             flipArrowUp();
@@ -93,21 +93,21 @@ public class DefaultRefreshIndicator extends LinearLayout implements RefreshIndi
     }
 
     @Override
-    public void onStartRefreshing() {
-        textView.setText(R.string.refreshing);
+    public void onStartRefreshing(RefreshLoadLayout refreshLoadLayout) {
+        textView.setText(R.string.on_loading);
         showProgress();
     }
 
     private void showProgress(){
-        imageView.setImageResource(R.drawable.refresh_circle);
+        imageView.setImageResource(R.drawable.ic_refresh);
         imageView.startAnimation(infiniteRotation);
     }
 
     @Override
-    public void onEndRefreshing() {
+    public void onEndRefreshing(RefreshLoadLayout refreshLoadLayout) {
         textView.setText("");
         imageView.clearAnimation();
-        imageView.setImageResource(R.drawable.arrow);
+        imageView.setImageResource(R.drawable.ic_arrow);
 
     }
 }

@@ -2,5 +2,6 @@
     <string name="app_name">RefreshLoadLayout</string>
     <string name="pull_down_refresh">下拉刷新</string>
     <string name="release_refresh">释放更新</string>
-    <string name="refreshing">加载中…</string>
+    <string name="on_loading">加载中…</string>
+    <string name="no_more_content">没有更多内容了</string>
 </resources>
