@@ -3,7 +3,9 @@ package com.example.refreshloadlayout;
 import android.content.Context;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -35,7 +37,6 @@ public class RefreshLoadLayout extends ViewGroup {
     private OnRefreshListener mOnRefreshListener;
 
     private LoadingHandler mLoadingHandler;
-
 
     private int mTouchSlop;
 
@@ -74,7 +75,7 @@ public class RefreshLoadLayout extends ViewGroup {
 
 
     public RefreshLoadLayout(Context context) {
-        this(context,null);
+        this(context, null);
     }
 
     public RefreshLoadLayout(Context context, AttributeSet attrs) {
@@ -88,25 +89,24 @@ public class RefreshLoadLayout extends ViewGroup {
         if (childCount > 1) {
             throw new IllegalStateException("Only support one child");
         }
-        mTouchSlop= ViewConfiguration.get(context).getScaledTouchSlop();
-        if (refreshingEnabled){
+        mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
+        if (refreshingEnabled) {
             addDefaultRefreshView();
         }
-        if (loadingEnabled){
+        if (loadingEnabled) {
             addDefaultLoadingIndicator();
         }
     }
 
     private void addDefaultLoadingIndicator() {
-        mLoadMoreIndicator =new DefaultLoadingMoreIndicator(getContext());
+        mLoadMoreIndicator = new DefaultLoadingMoreIndicator(getContext());
         addView((View) mLoadMoreIndicator, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
     }
 
     private void addDefaultRefreshView() {
         mRefreshIndicator = new DefaultRefreshIndicator(getContext());
-        addView((View) mRefreshIndicator,LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+        addView((View) mRefreshIndicator, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
     }
-
 
 
     @Override
@@ -120,7 +120,7 @@ public class RefreshLoadLayout extends ViewGroup {
             return;
         }
         measureChildren(widthMeasureSpec, heightMeasureSpec);
-        if (triggerDistance==0 && mRefreshIndicator!=null){
+        if (triggerDistance == 0 && mRefreshIndicator != null) {
             triggerDistance = ((View) mRefreshIndicator).getMeasuredHeight();
         }
     }
@@ -146,51 +146,37 @@ public class RefreshLoadLayout extends ViewGroup {
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
         mTarget.layout(getPaddingLeft(), getPaddingTop(), width - getPaddingRight(), height - getPaddingBottom());
-        if (mRefreshIndicator!=null){
+        if (mRefreshIndicator != null) {
             int refreshViewHeight = ((View) mRefreshIndicator).getMeasuredHeight();
             ((View) mRefreshIndicator).layout(0, -refreshViewHeight, width, 0);
         }
-        if (mLoadMoreIndicator!=null){
-            loadIndicatorHeight=((View)mLoadMoreIndicator).getMeasuredHeight();
-            ((View) mLoadMoreIndicator).layout(0, height, width, height+loadIndicatorHeight);
+        if (mLoadMoreIndicator != null) {
+            loadIndicatorHeight = ((View) mLoadMoreIndicator).getMeasuredHeight();
+            ((View) mLoadMoreIndicator).layout(0, height, width, height + loadIndicatorHeight);
         }
     }
 
-
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        findTarget();
-        Log.d(TAG,(mTarget==null)+"");
-        if (mTarget!=null){
-            if (mTarget instanceof AbsListView){
-                setAbsListViewOnScrollListener((AbsListView) mTarget);
-            }else if (mTarget instanceof RecyclerView){
-                setRecyclerViewOnScrollListener((RecyclerView) mTarget);
-            }
-        }
-    }
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (mTarget == null||mRefreshing||mLoadingMore) {
+        if (mTarget == null || mRefreshing || mLoadingMore) {
             return false;
         }
-        switch (ev.getAction()){
+        switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                initialY=ev.getY();
-                Log.d(TAG,"onInterceptTouchEvent downY："+initialY);
+                initialY = ev.getY();
+                Log.d(TAG, "onInterceptTouchEvent downY：" + initialY);
                 return false;
             case MotionEvent.ACTION_MOVE:
-                float y=ev.getY();
-                float dy=y-initialY;
-                if (Math.abs(dy)<mTouchSlop){
+                float y = ev.getY();
+                float dy = y - initialY;
+                if (Math.abs(dy) < mTouchSlop) {
                     return false;
                 }
-                if (dy>0){
+                if (dy > 0) {
                     //手指向下移动，下拉
-                    return refreshingEnabled&&!canChildScrollUp();
-                }else {
+                    return refreshingEnabled && !canChildScrollUp();
+                } else {
                     //手指向上移动，上滑
                     return canLoadingMore();
                 }
@@ -203,10 +189,10 @@ public class RefreshLoadLayout extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (mTarget==null){
+        if (mTarget == null) {
             return false;
         }
-        if (mRefreshing||mLoadingMore){
+        if (mRefreshing || mLoadingMore) {
             return false;
         }
         int action = event.getAction();
@@ -224,17 +210,17 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
     private boolean handleUpEvent(MotionEvent event) {
-        if (mLoadingMore||mRefreshing){
+        if (mLoadingMore || mRefreshing) {
             return false;
         }
-        int dy= (int) (event.getY()-initialY);
-        if (dy>0&&refreshingEnabled){
-            int scrollY=getScrollY();
-            if (scrollY<0){
-                if (-scrollY>=triggerDistance){
+        int dy = (int) (event.getY() - initialY);
+        if (dy > 0 && refreshingEnabled) {
+            int scrollY = getScrollY();
+            if (scrollY < 0) {
+                if (-scrollY >= triggerDistance) {
                     startRefreshing();
-                }else {
-                    scrollTo(0,0);
+                } else {
+                    scrollTo(0, 0);
                 }
                 return true;
             }
@@ -244,25 +230,25 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
     private boolean handleMoveEvent(MotionEvent event) {
-        if (mLoadingMore||mRefreshing){
+        if (mLoadingMore || mRefreshing) {
             return false;
         }
-        float y=event.getY();
-        int dy= (int) (y-initialY);
-        if (dy>0){
+        float y = event.getY();
+        int dy = (int) (y - initialY);
+        if (dy > 0) {
             //手指向下移动，下拉
-            if (!refreshingEnabled){
+            if (!refreshingEnabled) {
                 return false;
             }
-            int offset=(int) (dy*DRAG_RATE);
+            int offset = (int) (dy * DRAG_RATE);
             scrollTo(0, -offset);
-            Log.d(TAG,"dy:"+dy+" scrollY:"+getScrollY()+" offset:"+offset);
-            if (offset<triggerDistance){
+            Log.d(TAG, "dy:" + dy + " scrollY:" + getScrollY() + " offset:" + offset);
+            if (offset < triggerDistance) {
                 mRefreshIndicator.onPullDown(this);
-            }else {
+            } else {
                 mRefreshIndicator.onQualifiedRefreshing(this);
             }
-        }else {
+        } else {
             //手指向上移动，上滑
             return tryLoadingMore();
 
@@ -271,30 +257,29 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
 
-
     /**
      * @return Whether it is possible for the child view of this layout to
      * scroll up. Override this if the child view is a custom view.
      */
     public boolean canChildScrollUp() {
-        if (mOnTargetScrollUpCallback!=null){
-            return mOnTargetScrollUpCallback.canChildScrollUp(this,mTarget);
+        if (mOnTargetScrollUpCallback != null) {
+            return mOnTargetScrollUpCallback.canChildScrollUp(this, mTarget);
         }
         return ViewCompat.canScrollVertically(mTarget, -1);
     }
 
-    public boolean canChildScrollDown(){
-        if (mOnTargetScrollDownCallback!=null){
-            return mOnTargetScrollDownCallback.canChildScrollDown(this,mTarget);
+    public boolean canChildScrollDown() {
+        if (mOnTargetScrollDownCallback != null) {
+            return mOnTargetScrollDownCallback.canChildScrollDown(this, mTarget);
         }
-        return ViewCompat.canScrollVertically(mTarget,1);
+        return ViewCompat.canScrollVertically(mTarget, 1);
     }
 
-    public void setOnTargetScrollDownCallback(OnTargetScrollDownCallback callback){
-        mOnTargetScrollDownCallback=callback;
+    public void setOnTargetScrollDownCallback(OnTargetScrollDownCallback callback) {
+        mOnTargetScrollDownCallback = callback;
     }
 
-    public void setOnTargetScrollUpCallback(OnTargetScrollUpCallback callback){
+    public void setOnTargetScrollUpCallback(OnTargetScrollUpCallback callback) {
         mOnTargetScrollUpCallback = callback;
     }
 
@@ -304,7 +289,7 @@ public class RefreshLoadLayout extends ViewGroup {
 
     public void setRefreshingEnabled(boolean refreshingEnabled) {
         this.refreshingEnabled = refreshingEnabled;
-        if (mRefreshIndicator==null){
+        if (mRefreshIndicator == null) {
             addDefaultRefreshView();
         }
     }
@@ -315,31 +300,32 @@ public class RefreshLoadLayout extends ViewGroup {
 
     public void setLoadingEnabled(boolean loadingEnabled) {
         this.loadingEnabled = loadingEnabled;
-        if (mLoadMoreIndicator==null){
+        if (mLoadMoreIndicator == null) {
             addDefaultLoadingIndicator();
         }
     }
 
-    public void setRefreshIndicator(RefreshIndicator refreshIndicator){
-        if (refreshIndicator ==null){
+    public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
+        if (refreshIndicator == null) {
             return;
         }
-        if (!(refreshIndicator instanceof View)){
+        if (!(refreshIndicator instanceof View)) {
             throw new IllegalArgumentException("RefreshIndicator must be a view");
         }
-        if (mRefreshIndicator!=null){
+        if (mRefreshIndicator != null) {
             removeView((View) mRefreshIndicator);
         }
-        addView((View) refreshIndicator,LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT);
+        addView((View) refreshIndicator, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
         mRefreshIndicator = refreshIndicator;
     }
 
-    public void setOnRefreshListener(OnRefreshListener onRefreshListener){
-        mOnRefreshListener=onRefreshListener;
+    public void setOnRefreshListener(OnRefreshListener onRefreshListener) {
+        mOnRefreshListener = onRefreshListener;
     }
 
     /**
      * 设置加载处理器
+     *
      * @param loadingHandler
      */
     public void setLoadingHandler(LoadingHandler loadingHandler) {
@@ -350,46 +336,49 @@ public class RefreshLoadLayout extends ViewGroup {
         return mLoadingMore;
     }
 
-    public boolean isRefreshing(){
+    public boolean isRefreshing() {
         return mRefreshing;
     }
 
-    public void endRefreshing(){
-        if (!mRefreshing){
+    public void endRefreshing() {
+        if (!mRefreshing) {
             return;
         }
-        scrollTo(0,0);
+        scrollTo(0, 0);
         mRefreshIndicator.onEndRefreshing(this);
-        mRefreshing =false;
+        mRefreshing = false;
     }
 
-    public void startRefreshing(){
-        if (mRefreshing){
+    public void startRefreshing() {
+        if (mRefreshing) {
             // Already on refreshing
             return;
         }
-        refreshingEnabled=true;
-        if (mRefreshIndicator !=null){
+        refreshingEnabled = true;
+        if (mRefreshIndicator != null) {
             mRefreshIndicator.onStartRefreshing(this);
         }
-        scrollTo(0,-triggerDistance);
-        mRefreshing =true;
-        if (mOnRefreshListener!=null){
+        scrollTo(0, -triggerDistance);
+        mRefreshing = true;
+        if (mOnRefreshListener != null) {
             mOnRefreshListener.onRefresh();
         }
     }
 
-    private boolean tryLoadingMore(){
-        if (canLoadingMore()){
+    private boolean tryLoadingMore() {
+        if (canLoadingMore()) {
             startLoading();
             return true;
         }
         return false;
     }
 
-    private boolean canLoadingMore(){
-        if (!loadingEnabled||mLoadingMore||canChildScrollDown()||mLoadingHandler==null){
+    private boolean canLoadingMore() {
+        if (!loadingEnabled || mLoadingMore || canChildScrollDown()) {
             return false;
+        }
+        if (mLoadingHandler==null){
+            throw new IllegalStateException("You must set a LoadingHandler if want to implement the Load-More feature!");
         }
         return mLoadingHandler.canLoadMore();
     }
@@ -397,36 +386,83 @@ public class RefreshLoadLayout extends ViewGroup {
     /**
      * 开始加载更多o
      */
-    public void startLoading(){
-        if (mLoadingMore){
+    public void startLoading() {
+        if (mLoadingMore) {
             return;
         }
 
-        mLoadingMore=true;
+        mLoadingMore = true;
 
-        if (mLoadingHandler !=null){
+        if (mLoadingHandler != null) {
             mLoadingHandler.onLoading();
         }
-        if (mLoadMoreIndicator !=null){
+        if (mLoadMoreIndicator != null) {
             mLoadMoreIndicator.onStartLoading(this);
-            scrollTo(0,loadIndicatorHeight);
+            scrollTo(0, loadIndicatorHeight);
         }
     }
 
     /**
      * 结束加载更多
      */
-    public void endLoading(){
-        if (mLoadingMore){
-            mLoadingMore=false;
-            scrollTo(0,0);
-            if (mLoadMoreIndicator!=null){
+    public void endLoading() {
+        if (mLoadingMore) {
+            mLoadingMore = false;
+            scrollTo(0, 0);
+            scrollChildToNextItem();
+            if (mLoadMoreIndicator != null) {
                 mLoadMoreIndicator.onEndLoading(this);
             }
         }
     }
 
+    /**
+     * 将子视图滑动到下一个单元的位置
+     */
+    private void scrollChildToNextItem() {
+        if (!canChildScrollDown()) {
+            return;
+        }
+        if (mTarget instanceof AbsListView) {
+            AbsListView absListView = (AbsListView) mTarget;
+            int currentPosition = absListView.getLastVisiblePosition();
+            absListView.smoothScrollToPosition(currentPosition + 1);
+        } else if (mTarget instanceof RecyclerView) {
+            RecyclerView.LayoutManager layoutManager = ((RecyclerView) mTarget).getLayoutManager();
+            int lastPosition = 1;
+            if (layoutManager instanceof LinearLayoutManager) {
+                lastPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition() + 1;
+            } else if (layoutManager instanceof StaggeredGridLayoutManager) {
+                int[] positions = ((StaggeredGridLayoutManager) layoutManager).findLastVisibleItemPositions(null);
+                for (int position : positions) {
+                    if (position > lastPosition) {
+                        lastPosition = position;
+                    }
+                }
+            }
+            layoutManager.scrollToPosition(lastPosition + 1);
+        }
+    }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        setScrollListener();
+    }
+
+    /**
+     * 设置滑动监听，主要用于检测fling停止后是否可以向下滑动
+     */
+    private void setScrollListener() {
+        findTarget();
+        if (mTarget != null) {
+            if (mTarget instanceof AbsListView) {
+                setAbsListViewOnScrollListener((AbsListView) mTarget);
+            } else if (mTarget instanceof RecyclerView) {
+                setRecyclerViewOnScrollListener((RecyclerView) mTarget);
+            }
+        }
+    }
 
     private void setRecyclerViewOnScrollListener(RecyclerView recyclerView) {
         if (recyclerView != null) {
@@ -442,7 +478,6 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
 
-
     private void setAbsListViewOnScrollListener(AbsListView absListView) {
         if (absListView != null) {
             try {
@@ -454,7 +489,7 @@ public class RefreshLoadLayout extends ViewGroup {
                 absListView.setOnScrollListener(new AbsListView.OnScrollListener() {
                     @Override
                     public void onScrollStateChanged(AbsListView absListView, int scrollState) {
-                        Log.d(TAG,scrollState+"");
+                        Log.d(TAG, scrollState + "");
                         if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)) {
                             tryLoadingMore();
                         }
@@ -472,7 +507,7 @@ public class RefreshLoadLayout extends ViewGroup {
                     }
                 });
             } catch (Exception e) {
-                Log.e(TAG,"反射获取AbsListView#OnScrollListener异常",e);
+                Log.e(TAG, "反射获取AbsListView#OnScrollListener异常", e);
             }
         }
     }
@@ -480,7 +515,7 @@ public class RefreshLoadLayout extends ViewGroup {
     /**
      * 下拉刷新监听
      */
-    public interface OnRefreshListener{
+    public interface OnRefreshListener {
         void onRefresh();
     }
 
@@ -500,9 +535,10 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
 
-    public interface OnTargetScrollUpCallback{
+    public interface OnTargetScrollUpCallback {
         /**
          * 目标子视图是否能够向上滚动
+         *
          * @param parent
          * @param target
          * @return
@@ -510,9 +546,10 @@ public class RefreshLoadLayout extends ViewGroup {
         boolean canChildScrollUp(RefreshLoadLayout parent, @Nullable View target);
     }
 
-    public interface OnTargetScrollDownCallback{
+    public interface OnTargetScrollDownCallback {
         /**
          * 目标子视图是否能够向下滚动
+         *
          * @param parent
          * @param target
          * @return

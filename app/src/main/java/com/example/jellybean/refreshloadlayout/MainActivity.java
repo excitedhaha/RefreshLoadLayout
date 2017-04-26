@@ -1,7 +1,10 @@
 package com.example.jellybean.refreshloadlayout;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.animation.RotateAnimation;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
@@ -15,13 +18,9 @@ import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
-    ImageView imageView;
-    String url = "https://xiaodanchen.github.io/hello-world/img/Engin.png";
 
     ListView listView;
     RefreshLoadLayout refreshLoadLayout;
-
-
 
 
     @Override
@@ -56,7 +55,11 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         ArrayAdapter<String> arrayAdapter= (ArrayAdapter<String>) listView.getAdapter();
-                        arrayAdapter.add("tt");
+                        if (listView.getCount()<24){
+                            arrayAdapter.add("tt");
+                            arrayAdapter.add("tt");
+                        }
+
                         refreshLoadLayout.endLoading();
                     }
                 }, 2000);
@@ -74,5 +77,29 @@ public class MainActivity extends AppCompatActivity {
         }
         ArrayAdapter<String> stringArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, strings);
         listView.setAdapter(stringArrayAdapter);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main,menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id=item.getItemId();
+        switch (id){
+            case R.id.toRecycler:
+                startActivity(new Intent(this,RecyclerViewActivity.class));
+                return true;
+            case R.id.ban_refresh:
+                refreshLoadLayout.setRefreshingEnabled(false);
+                return true;
+            case R.id.ban_load:
+                refreshLoadLayout.setLoadingEnabled(false);
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }

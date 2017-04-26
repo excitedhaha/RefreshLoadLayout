@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/toRecycler"
+        android:title="RecyclerView"/>
+
+    <item android:id="@+id/ban_refresh"
+        android:title="禁用下拉刷新"/>
+
+    <item android:id="@+id/ban_load"
+        android:title="禁用上滑加载"/>
+</menu>
