@@ -55,11 +55,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         ArrayAdapter<String> arrayAdapter= (ArrayAdapter<String>) listView.getAdapter();
-                        if (listView.getCount()<24){
-                            arrayAdapter.add("tt");
-                            arrayAdapter.add("tt");
-                        }
-
+                        arrayAdapter.add("tt");
                         refreshLoadLayout.endLoading();
                     }
                 }, 2000);

@@ -63,6 +63,11 @@ public class RefreshLoadLayout extends ViewGroup {
     private boolean loadingEnabled;
 
     /**
+     * 是否展示没有更多内容的视图
+     */
+    private boolean showNoMore;
+
+    /**
      * 触发刷新所需的滑动距离,默认为刷新视图的高度
      */
     private int triggerDistance;
@@ -72,6 +77,10 @@ public class RefreshLoadLayout extends ViewGroup {
     private OnTargetScrollDownCallback mOnTargetScrollDownCallback;
 
     private OnTargetScrollUpCallback mOnTargetScrollUpCallback;
+
+    private RecyclerScrollListener recyclerScrollListener;
+
+    private AbsListViewScrollListener absListViewScrollListener;
 
 
     public RefreshLoadLayout(Context context) {
@@ -305,6 +314,14 @@ public class RefreshLoadLayout extends ViewGroup {
         }
     }
 
+    public boolean isShowNoMore() {
+        return showNoMore;
+    }
+
+    public void setShowNoMore(boolean showNoMore) {
+        this.showNoMore = showNoMore;
+    }
+
     public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
         if (refreshIndicator == null) {
             return;
@@ -369,8 +386,20 @@ public class RefreshLoadLayout extends ViewGroup {
         if (canLoadingMore()) {
             startLoading();
             return true;
+        }else if (showNoMore){
+            showNoMoreView();
         }
         return false;
+    }
+
+    /**
+     * 展示没有更多内容的视图
+     */
+    private void showNoMoreView() {
+        if (mLoadMoreIndicator != null) {
+            mLoadMoreIndicator.onNoMoreContent(this);
+            scrollTo(0, loadIndicatorHeight);
+        }
     }
 
     private boolean canLoadingMore() {
@@ -384,7 +413,7 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
     /**
-     * 开始加载更多o
+     * 开始加载更多
      */
     public void startLoading() {
         if (mLoadingMore) {
@@ -426,6 +455,9 @@ public class RefreshLoadLayout extends ViewGroup {
         if (mTarget instanceof AbsListView) {
             AbsListView absListView = (AbsListView) mTarget;
             int currentPosition = absListView.getLastVisiblePosition();
+            if (absListViewScrollListener!=null){
+                absListViewScrollListener.setSwallowNextScroll(true);
+            }
             absListView.smoothScrollToPosition(currentPosition + 1);
         } else if (mTarget instanceof RecyclerView) {
             RecyclerView.LayoutManager layoutManager = ((RecyclerView) mTarget).getLayoutManager();
@@ -439,6 +471,9 @@ public class RefreshLoadLayout extends ViewGroup {
                         lastPosition = position;
                     }
                 }
+            }
+            if (recyclerScrollListener!=null){
+                recyclerScrollListener.setSwallowNextScroll(true);
             }
             layoutManager.scrollToPosition(lastPosition + 1);
         }
@@ -466,14 +501,35 @@ public class RefreshLoadLayout extends ViewGroup {
 
     private void setRecyclerViewOnScrollListener(RecyclerView recyclerView) {
         if (recyclerView != null) {
-            recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-                @Override
-                public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-                    if ((newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING)) {
-                        tryLoadingMore();
-                    }
+            if (recyclerScrollListener==null){
+                recyclerScrollListener=new RecyclerScrollListener();
+            }
+            recyclerView.addOnScrollListener(recyclerScrollListener);
+        }
+    }
+
+    private class RecyclerScrollListener extends RecyclerView.OnScrollListener{
+        /**
+         * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
+         * {@link #scrollChildToNextItem()}连续触发加载
+         */
+        private boolean swallowNextScroll;
+
+        void setSwallowNextScroll(boolean swallowNextScroll) {
+            this.swallowNextScroll = swallowNextScroll;
+        }
+
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            if (swallowNextScroll){
+                if (newState == RecyclerView.SCROLL_STATE_IDLE){
+                    swallowNextScroll=false;
                 }
-            });
+                return;
+            }
+            if ((newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING)) {
+                tryLoadingMore();
+            }
         }
     }
 
@@ -485,29 +541,57 @@ public class RefreshLoadLayout extends ViewGroup {
                 Field field = AbsListView.class.getDeclaredField("mOnScrollListener");
                 field.setAccessible(true);
                 // 开发者自定义的滚动监听器
-                final AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absListView);
-                absListView.setOnScrollListener(new AbsListView.OnScrollListener() {
-                    @Override
-                    public void onScrollStateChanged(AbsListView absListView, int scrollState) {
-                        Log.d(TAG, scrollState + "");
-                        if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)) {
-                            tryLoadingMore();
-                        }
-
-                        if (onScrollListener != null) {
-                            onScrollListener.onScrollStateChanged(absListView, scrollState);
-                        }
-                    }
-
-                    @Override
-                    public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                        if (onScrollListener != null) {
-                            onScrollListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
-                        }
-                    }
-                });
+                AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absListView);
+                if (absListViewScrollListener==null){
+                    absListViewScrollListener=new AbsListViewScrollListener();
+                }
+                absListViewScrollListener.setOriginalListener(onScrollListener);
+                absListView.setOnScrollListener(absListViewScrollListener);
             } catch (Exception e) {
                 Log.e(TAG, "反射获取AbsListView#OnScrollListener异常", e);
+            }
+        }
+    }
+
+    private class AbsListViewScrollListener implements AbsListView.OnScrollListener{
+        private AbsListView.OnScrollListener originalListener;
+
+        /**
+         * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
+         * {@link #scrollChildToNextItem()}连续触发加载
+         */
+        private boolean swallowNextScroll;
+
+        void setSwallowNextScroll(boolean swallowNextScroll) {
+            this.swallowNextScroll = swallowNextScroll;
+        }
+
+        void setOriginalListener(AbsListView.OnScrollListener originalListener) {
+            this.originalListener = originalListener;
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView absListView, int scrollState) {
+            Log.d(TAG, scrollState + "");
+            if (swallowNextScroll){
+                if (scrollState == SCROLL_STATE_IDLE){
+                    swallowNextScroll=false;
+                }
+                return;
+            }
+            if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)) {
+                tryLoadingMore();
+            }
+
+            if (originalListener != null) {
+                originalListener.onScrollStateChanged(absListView, scrollState);
+            }
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            if (originalListener != null) {
+                originalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
             }
         }
     }
