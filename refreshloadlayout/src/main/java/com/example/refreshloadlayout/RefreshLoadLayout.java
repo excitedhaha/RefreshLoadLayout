@@ -2,7 +2,10 @@ package com.example.refreshloadlayout;
 
 import android.content.Context;
 import android.support.annotation.Nullable;
+import android.support.v4.view.NestedScrollingParent;
+import android.support.v4.view.NestedScrollingParentHelper;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.view.ViewParentCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
@@ -21,7 +24,7 @@ import java.lang.reflect.Field;
  * Created by jellybean on 2017/4/12.
  */
 
-public class RefreshLoadLayout extends ViewGroup {
+public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParent{
     static final String TAG = "RefreshLoadLayout";
 
 
@@ -41,6 +44,8 @@ public class RefreshLoadLayout extends ViewGroup {
     private int mTouchSlop;
 
     private float initialY;
+
+    private float mTotalUnconsumed;
 
     /**
      * 是否处于刷新状态
@@ -62,10 +67,6 @@ public class RefreshLoadLayout extends ViewGroup {
      */
     private boolean loadingEnabled;
 
-    /**
-     * 是否展示没有更多内容的视图
-     */
-    private boolean showNoMore;
 
     /**
      * 触发刷新所需的滑动距离,默认为刷新视图的高度
@@ -82,6 +83,7 @@ public class RefreshLoadLayout extends ViewGroup {
 
     private AbsListViewScrollListener absListViewScrollListener;
 
+    private NestedScrollingParentHelper nestedScrollingParentHelper;
 
     public RefreshLoadLayout(Context context) {
         this(context, null);
@@ -98,6 +100,7 @@ public class RefreshLoadLayout extends ViewGroup {
         if (childCount > 1) {
             throw new IllegalStateException("Only support one child");
         }
+        nestedScrollingParentHelper=new NestedScrollingParentHelper(this);
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         if (refreshingEnabled) {
             addDefaultRefreshView();
@@ -135,10 +138,17 @@ public class RefreshLoadLayout extends ViewGroup {
     }
 
     private void findTarget() {
+        if (mTarget!=null){
+            return;
+        }
         for (int i = 0; i < getChildCount(); i++) {
             View view = getChildAt(i);
-            if (view != mRefreshIndicator) {
+            if (view != mRefreshIndicator && view!=mLoadMoreIndicator) {
                 mTarget = view;
+                boolean enabled=ViewCompat.isNestedScrollingEnabled(mTarget);
+                if (!enabled){
+                    ViewCompat.setNestedScrollingEnabled(mTarget,true);
+                }
                 break;
             }
         }
@@ -229,7 +239,7 @@ public class RefreshLoadLayout extends ViewGroup {
                 if (-scrollY >= triggerDistance) {
                     startRefreshing();
                 } else {
-                    scrollTo(0, 0);
+                    scrollBack();
                 }
                 return true;
             }
@@ -249,14 +259,7 @@ public class RefreshLoadLayout extends ViewGroup {
             if (!refreshingEnabled) {
                 return false;
             }
-            int offset = (int) (dy * DRAG_RATE);
-            scrollTo(0, -offset);
-            Log.d(TAG, "dy:" + dy + " scrollY:" + getScrollY() + " offset:" + offset);
-            if (offset < triggerDistance) {
-                mRefreshIndicator.onPullDown(this);
-            } else {
-                mRefreshIndicator.onQualifiedRefreshing(this);
-            }
+            scrollDown(dy);
         } else {
             //手指向上移动，上滑
             return tryLoadingMore();
@@ -265,6 +268,89 @@ public class RefreshLoadLayout extends ViewGroup {
         return false;
     }
 
+    /**
+     * 将head向下滑动到指定距离
+     * @param y 目标位置
+     */
+    private void scrollDown(int y) {
+        int offset = (int) (y * DRAG_RATE);
+        scrollTo(0, -offset);
+        Log.d(TAG, "dy:" + y + " scrollY:" + getScrollY() + " offset:" + offset);
+        if (offset < triggerDistance) {
+            mRefreshIndicator.onPullDown(this);
+        } else {
+            mRefreshIndicator.onQualifiedRefreshing(this);
+        }
+    }
+
+    /**
+     * 复位
+     */
+    private void scrollBack(){
+        scrollTo(0,0);
+    }
+
+    // NestedScrollingParent
+
+    @Override
+    public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
+        return !(mRefreshing||mLoadingMore)&&nestedScrollAxes==ViewCompat.SCROLL_AXIS_VERTICAL;
+    }
+
+    @Override
+    public void onNestedScrollAccepted(View child, View target, int axes) {
+        nestedScrollingParentHelper.onNestedScrollAccepted(child,target,axes);
+    }
+
+    @Override
+    public void onStopNestedScroll(View child) {
+        nestedScrollingParentHelper.onStopNestedScroll(child);
+        super.onStopNestedScroll(child);
+        Log.d(TAG,"onStopNestedScroll");
+        if (mTotalUnconsumed<0){
+            int unconsumed=(int) Math.abs(mTotalUnconsumed);
+            if (unconsumed>=triggerDistance){
+                startRefreshing();
+            }else {
+                scrollBack();
+            }
+        }
+        mTotalUnconsumed=0;
+    }
+
+    @Override
+    public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed) {
+        Log.d(TAG,"onNestedScroll dxConsumed:"+dxConsumed+" dyConsumed:"+dyConsumed+" dxUnconsumed:"+dxUnconsumed+" dyUnconsumed:"+dyUnconsumed);
+        super.onNestedScroll(target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed);
+        if (dyUnconsumed<0){
+            mTotalUnconsumed+=dyUnconsumed;
+            int unconsumed=(int) Math.abs(mTotalUnconsumed);
+            scrollDown(unconsumed);
+        }
+    }
+
+    @Override
+    public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
+        Log.d(TAG,"onNestedPreScroll dx:"+dx+" dy:"+dy+" consumedX:"+consumed[0]+" consumedY:"+consumed[1]);
+        super.onNestedPreScroll(target, dx, dy, consumed);
+        if (dy>0 && mTotalUnconsumed<0){
+            int unconsumed=(int) Math.abs(mTotalUnconsumed);
+            if (dy>unconsumed){
+                consumed[1]=unconsumed;
+                mTotalUnconsumed=0;
+                scrollBack();
+            }else {
+                consumed[1]=dy;
+                mTotalUnconsumed+=dy;
+                scrollDown(unconsumed-dy);
+            }
+        }
+    }
+
+    @Override
+    public int getNestedScrollAxes() {
+        return nestedScrollingParentHelper.getNestedScrollAxes();
+    }
 
     /**
      * @return Whether it is possible for the child view of this layout to
@@ -314,13 +400,7 @@ public class RefreshLoadLayout extends ViewGroup {
         }
     }
 
-    public boolean isShowNoMore() {
-        return showNoMore;
-    }
 
-    public void setShowNoMore(boolean showNoMore) {
-        this.showNoMore = showNoMore;
-    }
 
     public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
         if (refreshIndicator == null) {
@@ -361,7 +441,7 @@ public class RefreshLoadLayout extends ViewGroup {
         if (!mRefreshing) {
             return;
         }
-        scrollTo(0, 0);
+        scrollBack();
         mRefreshIndicator.onEndRefreshing(this);
         mRefreshing = false;
     }
@@ -386,21 +466,10 @@ public class RefreshLoadLayout extends ViewGroup {
         if (canLoadingMore()) {
             startLoading();
             return true;
-        }else if (showNoMore){
-            showNoMoreView();
         }
         return false;
     }
 
-    /**
-     * 展示没有更多内容的视图
-     */
-    private void showNoMoreView() {
-        if (mLoadMoreIndicator != null) {
-            mLoadMoreIndicator.onNoMoreContent(this);
-            scrollTo(0, loadIndicatorHeight);
-        }
-    }
 
     private boolean canLoadingMore() {
         if (!loadingEnabled || mLoadingMore || canChildScrollDown()) {
@@ -437,7 +506,7 @@ public class RefreshLoadLayout extends ViewGroup {
     public void endLoading() {
         if (mLoadingMore) {
             mLoadingMore = false;
-            scrollTo(0, 0);
+            scrollBack();
             scrollChildToNextItem();
             if (mLoadMoreIndicator != null) {
                 mLoadMoreIndicator.onEndLoading(this);

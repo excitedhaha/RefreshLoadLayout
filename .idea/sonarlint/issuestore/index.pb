@@ -28,3 +28,19 @@ Trefreshloadlayout/src/main/java/com/example/refreshloadlayout/RefreshLoadLayout
 build.gradle,f/0/f07866736216be0ee2aba49e392191aeae700a35
 „
 Trefreshloadlayout/src/main/java/com/example/refreshloadlayout/LoadMoreIndicator.java,d/f/df608c2217439173582c92236f538a2fa19bfca9
+s
+Crefreshloadlayout/src/main/res/layout/default_refresh_indicator.xml,d/4/d47521252b7640a666b1ed01d976a654d391f25a
+p
+@refreshloadlayout/src/main/res/layout/default_load_indicator.xml,3/0/3056845dbe20615f2f6c59e43052f252887dfe6c
+a
+1refreshloadlayout/src/main/res/values/strings.xml,4/3/43af2d11019755af680863363515a198652a24b8
+P
+ app/src/main/AndroidManifest.xml,8/c/8c55c3ccc257e5907959013f99656e4c8ec3903e
+Y
+)app/src/main/res/layout/item_recycler.xml,5/6/5614b059e9e614e97af991d2594aacb3b9e31e15
+b
+2app/src/main/res/layout/activity_recycler_view.xml,e/c/ec17696e705b6fec08acd186528d5abbb559ffc4
+N
+app/src/main/res/menu/main.xml,2/2/22209de88391c01e1ce3911e9b7305487116d1a1
+ƒ
+Sapp/src/main/java/com/example/jellybean/refreshloadlayout/RecyclerViewActivity.java,e/0/e0556f4fbe828cbc5ed29dfabfdba41a81297468
