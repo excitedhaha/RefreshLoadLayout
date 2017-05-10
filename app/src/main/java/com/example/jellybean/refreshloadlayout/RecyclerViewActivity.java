@@ -77,7 +77,7 @@ public class RecyclerViewActivity extends AppCompatActivity {
         TextView textView;
         public Holder(View itemView) {
             super(itemView);
-            textView= (TextView) itemView.findViewById(R.id.textView);
+            textView= (TextView) itemView.findViewById(android.R.id.text1);
         }
 
     }
@@ -92,7 +92,7 @@ public class RecyclerViewActivity extends AppCompatActivity {
 
         @Override
         public Holder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View itemView= LayoutInflater.from(parent.getContext()).inflate(R.layout.item_recycler,parent,false);
+            View itemView= LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_1,parent,false);
             return new Holder(itemView);
         }
 

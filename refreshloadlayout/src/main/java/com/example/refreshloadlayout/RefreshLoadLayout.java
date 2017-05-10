@@ -5,7 +5,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.NestedScrollingParent;
 import android.support.v4.view.NestedScrollingParentHelper;
 import android.support.v4.view.ViewCompat;
-import android.support.v4.view.ViewParentCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
@@ -24,9 +23,8 @@ import java.lang.reflect.Field;
  * Created by jellybean on 2017/4/12.
  */
 
-public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParent{
+public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParent {
     static final String TAG = "RefreshLoadLayout";
-
 
     private static final float DRAG_RATE = .5f;
 
@@ -100,7 +98,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (childCount > 1) {
             throw new IllegalStateException("Only support one child");
         }
-        nestedScrollingParentHelper=new NestedScrollingParentHelper(this);
+        nestedScrollingParentHelper = new NestedScrollingParentHelper(this);
         mTouchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         if (refreshingEnabled) {
             addDefaultRefreshView();
@@ -138,17 +136,13 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     }
 
     private void findTarget() {
-        if (mTarget!=null){
+        if (mTarget != null) {
             return;
         }
         for (int i = 0; i < getChildCount(); i++) {
             View view = getChildAt(i);
-            if (view != mRefreshIndicator && view!=mLoadMoreIndicator) {
+            if (view != mRefreshIndicator && view != mLoadMoreIndicator) {
                 mTarget = view;
-                boolean enabled=ViewCompat.isNestedScrollingEnabled(mTarget);
-                if (!enabled){
-                    ViewCompat.setNestedScrollingEnabled(mTarget,true);
-                }
                 break;
             }
         }
@@ -256,10 +250,10 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         int dy = (int) (y - initialY);
         if (dy > 0) {
             //手指向下移动，下拉
-            if (!refreshingEnabled) {
-                return false;
+            if (refreshingEnabled) {
+                scrollDown(dy);
+                return true;
             }
-            scrollDown(dy);
         } else {
             //手指向上移动，上滑
             return tryLoadingMore();
@@ -270,6 +264,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
     /**
      * 将head向下滑动到指定距离
+     *
      * @param y 目标位置
      */
     private void scrollDown(int y) {
@@ -286,63 +281,63 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     /**
      * 复位
      */
-    private void scrollBack(){
-        scrollTo(0,0);
+    private void scrollBack() {
+        scrollTo(0, 0);
     }
 
     // NestedScrollingParent
 
     @Override
     public boolean onStartNestedScroll(View child, View target, int nestedScrollAxes) {
-        return !(mRefreshing||mLoadingMore)&&nestedScrollAxes==ViewCompat.SCROLL_AXIS_VERTICAL;
+        return !(mRefreshing || mLoadingMore) && nestedScrollAxes == ViewCompat.SCROLL_AXIS_VERTICAL;
     }
 
     @Override
     public void onNestedScrollAccepted(View child, View target, int axes) {
-        nestedScrollingParentHelper.onNestedScrollAccepted(child,target,axes);
+        nestedScrollingParentHelper.onNestedScrollAccepted(child, target, axes);
     }
 
     @Override
     public void onStopNestedScroll(View child) {
         nestedScrollingParentHelper.onStopNestedScroll(child);
         super.onStopNestedScroll(child);
-        Log.d(TAG,"onStopNestedScroll");
-        if (mTotalUnconsumed<0){
-            int unconsumed=(int) Math.abs(mTotalUnconsumed);
-            if (unconsumed>=triggerDistance){
+        Log.d(TAG, "onStopNestedScroll");
+        if (mTotalUnconsumed < 0) {
+            int unconsumed = (int) Math.abs(mTotalUnconsumed);
+            if (unconsumed >= triggerDistance) {
                 startRefreshing();
-            }else {
+            } else {
                 scrollBack();
             }
         }
-        mTotalUnconsumed=0;
+        mTotalUnconsumed = 0;
     }
 
     @Override
     public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed) {
-        Log.d(TAG,"onNestedScroll dxConsumed:"+dxConsumed+" dyConsumed:"+dyConsumed+" dxUnconsumed:"+dxUnconsumed+" dyUnconsumed:"+dyUnconsumed);
+        Log.d(TAG, "onNestedScroll dxConsumed:" + dxConsumed + " dyConsumed:" + dyConsumed + " dxUnconsumed:" + dxUnconsumed + " dyUnconsumed:" + dyUnconsumed);
         super.onNestedScroll(target, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed);
-        if (dyUnconsumed<0){
-            mTotalUnconsumed+=dyUnconsumed;
-            int unconsumed=(int) Math.abs(mTotalUnconsumed);
+        if (refreshingEnabled && dyUnconsumed < 0) {
+            mTotalUnconsumed += dyUnconsumed;
+            int unconsumed = (int) Math.abs(mTotalUnconsumed);
             scrollDown(unconsumed);
         }
     }
 
     @Override
     public void onNestedPreScroll(View target, int dx, int dy, int[] consumed) {
-        Log.d(TAG,"onNestedPreScroll dx:"+dx+" dy:"+dy+" consumedX:"+consumed[0]+" consumedY:"+consumed[1]);
+        Log.d(TAG, "onNestedPreScroll dx:" + dx + " dy:" + dy + " consumedX:" + consumed[0] + " consumedY:" + consumed[1]);
         super.onNestedPreScroll(target, dx, dy, consumed);
-        if (dy>0 && mTotalUnconsumed<0){
-            int unconsumed=(int) Math.abs(mTotalUnconsumed);
-            if (dy>unconsumed){
-                consumed[1]=unconsumed;
-                mTotalUnconsumed=0;
+        if (dy > 0 && mTotalUnconsumed < 0) {
+            int unconsumed = (int) Math.abs(mTotalUnconsumed);
+            if (dy > unconsumed) {
+                consumed[1] = unconsumed;
+                mTotalUnconsumed = 0;
                 scrollBack();
-            }else {
-                consumed[1]=dy;
-                mTotalUnconsumed+=dy;
-                scrollDown(unconsumed-dy);
+            } else {
+                consumed[1] = dy;
+                mTotalUnconsumed += dy;
+                scrollDown(unconsumed - dy);
             }
         }
     }
@@ -399,7 +394,6 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
             addDefaultLoadingIndicator();
         }
     }
-
 
 
     public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
@@ -475,7 +469,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (!loadingEnabled || mLoadingMore || canChildScrollDown()) {
             return false;
         }
-        if (mLoadingHandler==null){
+        if (mLoadingHandler == null) {
             throw new IllegalStateException("You must set a LoadingHandler if want to implement the Load-More feature!");
         }
         return mLoadingHandler.canLoadMore();
@@ -524,7 +518,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mTarget instanceof AbsListView) {
             AbsListView absListView = (AbsListView) mTarget;
             int currentPosition = absListView.getLastVisiblePosition();
-            if (absListViewScrollListener!=null){
+            if (absListViewScrollListener != null) {
                 absListViewScrollListener.setSwallowNextScroll(true);
             }
             absListView.smoothScrollToPosition(currentPosition + 1);
@@ -541,7 +535,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
                     }
                 }
             }
-            if (recyclerScrollListener!=null){
+            if (recyclerScrollListener != null) {
                 recyclerScrollListener.setSwallowNextScroll(true);
             }
             layoutManager.scrollToPosition(lastPosition + 1);
@@ -570,38 +564,12 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
     private void setRecyclerViewOnScrollListener(RecyclerView recyclerView) {
         if (recyclerView != null) {
-            if (recyclerScrollListener==null){
-                recyclerScrollListener=new RecyclerScrollListener();
+            if (recyclerScrollListener == null) {
+                recyclerScrollListener = new RecyclerScrollListener();
             }
             recyclerView.addOnScrollListener(recyclerScrollListener);
         }
     }
-
-    private class RecyclerScrollListener extends RecyclerView.OnScrollListener{
-        /**
-         * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
-         * {@link #scrollChildToNextItem()}连续触发加载
-         */
-        private boolean swallowNextScroll;
-
-        void setSwallowNextScroll(boolean swallowNextScroll) {
-            this.swallowNextScroll = swallowNextScroll;
-        }
-
-        @Override
-        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-            if (swallowNextScroll){
-                if (newState == RecyclerView.SCROLL_STATE_IDLE){
-                    swallowNextScroll=false;
-                }
-                return;
-            }
-            if ((newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING)) {
-                tryLoadingMore();
-            }
-        }
-    }
-
 
     private void setAbsListViewOnScrollListener(AbsListView absListView) {
         if (absListView != null) {
@@ -611,8 +579,8 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
                 field.setAccessible(true);
                 // 开发者自定义的滚动监听器
                 AbsListView.OnScrollListener onScrollListener = (AbsListView.OnScrollListener) field.get(absListView);
-                if (absListViewScrollListener==null){
-                    absListViewScrollListener=new AbsListViewScrollListener();
+                if (absListViewScrollListener == null) {
+                    absListViewScrollListener = new AbsListViewScrollListener();
                 }
                 absListViewScrollListener.setOriginalListener(onScrollListener);
                 absListView.setOnScrollListener(absListViewScrollListener);
@@ -622,48 +590,6 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         }
     }
 
-    private class AbsListViewScrollListener implements AbsListView.OnScrollListener{
-        private AbsListView.OnScrollListener originalListener;
-
-        /**
-         * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
-         * {@link #scrollChildToNextItem()}连续触发加载
-         */
-        private boolean swallowNextScroll;
-
-        void setSwallowNextScroll(boolean swallowNextScroll) {
-            this.swallowNextScroll = swallowNextScroll;
-        }
-
-        void setOriginalListener(AbsListView.OnScrollListener originalListener) {
-            this.originalListener = originalListener;
-        }
-
-        @Override
-        public void onScrollStateChanged(AbsListView absListView, int scrollState) {
-            Log.d(TAG, scrollState + "");
-            if (swallowNextScroll){
-                if (scrollState == SCROLL_STATE_IDLE){
-                    swallowNextScroll=false;
-                }
-                return;
-            }
-            if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)) {
-                tryLoadingMore();
-            }
-
-            if (originalListener != null) {
-                originalListener.onScrollStateChanged(absListView, scrollState);
-            }
-        }
-
-        @Override
-        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-            if (originalListener != null) {
-                originalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
-            }
-        }
-    }
 
     /**
      * 下拉刷新监听
@@ -687,7 +613,6 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         void onLoading();
     }
 
-
     public interface OnTargetScrollUpCallback {
         /**
          * 目标子视图是否能够向上滚动
@@ -708,6 +633,74 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
          * @return
          */
         boolean canChildScrollDown(RefreshLoadLayout parent, @Nullable View target);
+    }
+
+    private class RecyclerScrollListener extends RecyclerView.OnScrollListener {
+        /**
+         * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
+         * {@link #scrollChildToNextItem()}连续触发加载
+         */
+        private boolean swallowNextScroll;
+
+        void setSwallowNextScroll(boolean swallowNextScroll) {
+            this.swallowNextScroll = swallowNextScroll;
+        }
+
+        @Override
+        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
+            if (swallowNextScroll) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    swallowNextScroll = false;
+                }
+                return;
+            }
+            if ((newState == RecyclerView.SCROLL_STATE_IDLE || newState == RecyclerView.SCROLL_STATE_SETTLING)) {
+                tryLoadingMore();
+            }
+        }
+    }
+
+    private class AbsListViewScrollListener implements AbsListView.OnScrollListener {
+        private AbsListView.OnScrollListener originalListener;
+
+        /**
+         * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
+         * {@link #scrollChildToNextItem()}连续触发加载
+         */
+        private boolean swallowNextScroll;
+
+        void setSwallowNextScroll(boolean swallowNextScroll) {
+            this.swallowNextScroll = swallowNextScroll;
+        }
+
+        void setOriginalListener(AbsListView.OnScrollListener originalListener) {
+            this.originalListener = originalListener;
+        }
+
+        @Override
+        public void onScrollStateChanged(AbsListView absListView, int scrollState) {
+            Log.d(TAG, scrollState + "");
+            if (swallowNextScroll) {
+                if (scrollState == SCROLL_STATE_IDLE) {
+                    swallowNextScroll = false;
+                }
+                return;
+            }
+            if ((scrollState == SCROLL_STATE_IDLE || scrollState == SCROLL_STATE_FLING)) {
+                tryLoadingMore();
+            }
+
+            if (originalListener != null) {
+                originalListener.onScrollStateChanged(absListView, scrollState);
+            }
+        }
+
+        @Override
+        public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+            if (originalListener != null) {
+                originalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
+            }
+        }
     }
 
 }
