@@ -4,8 +4,10 @@
         android:title="RecyclerView"/>
 
     <item android:id="@+id/ban_refresh"
+        android:checkable="true"
         android:title="禁用下拉刷新"/>
 
     <item android:id="@+id/ban_load"
+        android:checkable="true"
         android:title="禁用上滑加载"/>
 </menu>

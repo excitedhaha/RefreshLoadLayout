@@ -77,7 +77,7 @@ public class DefaultRefreshIndicator extends LinearLayout implements RefreshIndi
 
 
     @Override
-    public void onPullDown(RefreshLoadLayout refreshLoadLayout) {
+    public void onPullDown(RefreshLoadLayout refreshLoadLayout, int scrollDistance) {
         textView.setText(R.string.pull_down_refresh);
         if (!arrowDown){
             flipArrowDown();
@@ -85,7 +85,7 @@ public class DefaultRefreshIndicator extends LinearLayout implements RefreshIndi
     }
 
     @Override
-    public void onQualifiedRefreshing(RefreshLoadLayout refreshLoadLayout) {
+    public void onQualifiedRefreshing(RefreshLoadLayout refreshLoadLayout, int scrollDistance) {
         textView.setText(R.string.release_refresh);
         if (arrowDown){
             flipArrowUp();

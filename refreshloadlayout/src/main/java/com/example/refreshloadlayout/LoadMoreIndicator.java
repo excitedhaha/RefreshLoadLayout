@@ -16,8 +16,4 @@ public interface LoadMoreIndicator {
      */
     void onEndLoading(RefreshLoadLayout refreshLoadLayout);
 
-    /**
-     * 没有更多内容可展示
-     */
-    void onNoMoreContent(RefreshLoadLayout refreshLoadLayout);
 }

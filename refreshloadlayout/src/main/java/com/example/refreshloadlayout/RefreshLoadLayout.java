@@ -1,6 +1,7 @@
 package com.example.refreshloadlayout;
 
 import android.content.Context;
+import android.nfc.NfcEvent;
 import android.support.annotation.Nullable;
 import android.support.v4.view.NestedScrollingParent;
 import android.support.v4.view.NestedScrollingParentHelper;
@@ -156,16 +157,48 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mTarget == null) {
             return;
         }
+        int paddingLeft=getPaddingLeft();
+        int paddingTop=getPaddingTop();
+        int paddingRight=getPaddingRight();
+        int paddingBottom=getPaddingBottom();
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
-        mTarget.layout(getPaddingLeft(), getPaddingTop(), width - getPaddingRight(), height - getPaddingBottom());
+
+
+
+        mTarget.layout(paddingLeft, paddingTop, width - paddingRight, height - paddingBottom);
         if (mRefreshIndicator != null) {
             int refreshViewHeight = ((View) mRefreshIndicator).getMeasuredHeight();
-            ((View) mRefreshIndicator).layout(0, -refreshViewHeight, width, 0);
+            int refreshViewWidth = ((View) mRefreshIndicator).getMeasuredWidth();
+            LayoutParams layoutParams=((View) mRefreshIndicator).getLayoutParams();
+            int marginTop=0;
+            int marginBottom=0;
+            if (layoutParams!=null&&layoutParams instanceof MarginLayoutParams){
+                marginTop=((MarginLayoutParams) layoutParams).topMargin;
+                marginBottom=((MarginLayoutParams) layoutParams).bottomMargin;
+            }
+            int left= width / 2 - refreshViewWidth / 2;
+            int bottom=-marginBottom;
+            int top=bottom-refreshViewHeight-marginTop;
+            int right=left + refreshViewWidth ;
+
+            ((View) mRefreshIndicator).layout(left,top, right,  bottom);
         }
         if (mLoadMoreIndicator != null) {
             loadIndicatorHeight = ((View) mLoadMoreIndicator).getMeasuredHeight();
-            ((View) mLoadMoreIndicator).layout(0, height, width, height + loadIndicatorHeight);
+            int loadIndicatorWidth = ((View) mLoadMoreIndicator).getMeasuredWidth();
+            LayoutParams layoutParams=((View) mLoadMoreIndicator).getLayoutParams();
+            int marginTop=0;
+            int marginBottom=0;
+            if (layoutParams!=null&&layoutParams instanceof MarginLayoutParams){
+                marginTop=((MarginLayoutParams) layoutParams).topMargin;
+                marginBottom=((MarginLayoutParams) layoutParams).bottomMargin;
+            }
+            int left= width / 2 - loadIndicatorWidth / 2;
+            int top=height+marginTop;
+            int right=left + loadIndicatorWidth ;
+            int bottom=top+loadIndicatorHeight+marginBottom;
+            ((View) mLoadMoreIndicator).layout(left, top,right,bottom);
         }
     }
 
@@ -272,9 +305,9 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         scrollTo(0, -offset);
         Log.d(TAG, "dy:" + y + " scrollY:" + getScrollY() + " offset:" + offset);
         if (offset < triggerDistance) {
-            mRefreshIndicator.onPullDown(this);
+            mRefreshIndicator.onPullDown(this,offset);
         } else {
-            mRefreshIndicator.onQualifiedRefreshing(this);
+            mRefreshIndicator.onQualifiedRefreshing(this,offset);
         }
     }
 
@@ -283,6 +316,30 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
      */
     private void scrollBack() {
         scrollTo(0, 0);
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mRefreshIndicator != null && mRefreshing) {
+            mRefreshIndicator.onEndRefreshing(this);
+        }
+        if (mLoadMoreIndicator != null && mLoadingMore) {
+            mLoadMoreIndicator.onEndLoading(this);
+        }
+    }
+
+    @Override
+    public void requestDisallowInterceptTouchEvent(boolean b) {
+        // if this is a List < L or another view that doesn't support nested
+        // scrolling, ignore this request so that the vertical scroll event
+        // isn't stolen
+        if ((android.os.Build.VERSION.SDK_INT < 21 && mTarget instanceof AbsListView)
+                || (mTarget != null && !ViewCompat.isNestedScrollingEnabled(mTarget))) {
+            // Nope.
+        } else {
+            super.requestDisallowInterceptTouchEvent(b);
+        }
     }
 
     // NestedScrollingParent
@@ -397,7 +454,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
 
     public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
-        if (refreshIndicator == null) {
+        if (refreshIndicator == null ||refreshIndicator==mRefreshIndicator) {
             return;
         }
         if (!(refreshIndicator instanceof View)) {
@@ -406,12 +463,26 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mRefreshIndicator != null) {
             removeView((View) mRefreshIndicator);
         }
-        addView((View) refreshIndicator, LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+        addView((View) refreshIndicator, new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
         mRefreshIndicator = refreshIndicator;
     }
 
     public void setOnRefreshListener(OnRefreshListener onRefreshListener) {
         mOnRefreshListener = onRefreshListener;
+    }
+
+    public void setLoadingIndicator(LoadMoreIndicator loadingIndicator) {
+        if (loadingIndicator == null||loadingIndicator==mLoadMoreIndicator) {
+            return;
+        }
+        if (!(loadingIndicator instanceof View)) {
+            throw new IllegalArgumentException("LoadingIndicator must be a view");
+        }
+        if (mLoadMoreIndicator != null) {
+            removeView((View) mLoadMoreIndicator);
+        }
+        addView((View) loadingIndicator, new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
+        mLoadMoreIndicator = loadingIndicator;
     }
 
     /**

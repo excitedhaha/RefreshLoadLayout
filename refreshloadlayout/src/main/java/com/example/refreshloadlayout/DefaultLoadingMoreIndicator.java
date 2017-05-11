@@ -34,8 +34,4 @@ public class DefaultLoadingMoreIndicator extends LinearLayout implements LoadMor
 
     }
 
-    @Override
-    public void onNoMoreContent(RefreshLoadLayout refreshLoadLayout) {
-        textView.setText(R.string.no_more_content);
-    }
 }

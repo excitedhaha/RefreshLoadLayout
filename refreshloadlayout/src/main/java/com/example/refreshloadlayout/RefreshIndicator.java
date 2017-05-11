@@ -6,15 +6,20 @@ package com.example.refreshloadlayout;
  */
 
 public interface RefreshIndicator {
-    /**
-     * 下拉中，但未到达刷新距离
-     */
-    void onPullDown(RefreshLoadLayout refreshLoadLayout);
 
     /**
-     * 满足刷新条件
+     * 下拉中，但未到达刷新距离
+     * @param refreshLoadLayout 刷新加载布局
+     * @param scrollDistance 当前视图滑动的距离
      */
-    void onQualifiedRefreshing(RefreshLoadLayout refreshLoadLayout);
+    void onPullDown(RefreshLoadLayout refreshLoadLayout , int scrollDistance);
+
+    /**
+     *  满足刷新条件
+     * @param refreshLoadLayout 刷新加载布局
+     * @param scrollDistance 当前视图滑动的距离
+     */
+    void onQualifiedRefreshing(RefreshLoadLayout refreshLoadLayout,int scrollDistance);
 
     /**
      * 开始刷新

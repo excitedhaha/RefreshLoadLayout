@@ -1,16 +1,19 @@
 package com.example.jellybean.refreshloadlayout;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.ViewGroup;
 import android.view.animation.RotateAnimation;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 
+import com.example.refreshloadlayout.MaterialIndicator;
 import com.example.refreshloadlayout.RefreshLoadLayout;
 
 import java.util.ArrayList;
@@ -42,6 +45,10 @@ public class MainActivity extends AppCompatActivity {
                 }, 3000);
             }
         });
+        MaterialIndicator materialIndicator=new MaterialIndicator(this);
+        materialIndicator.getProgressView().setColorSchemeColors(Color.RED,Color.YELLOW);
+        refreshLoadLayout.setRefreshIndicator(materialIndicator);
+        refreshLoadLayout.setLoadingIndicator(new MaterialIndicator(this));
         fillListView();
         refreshLoadLayout.setLoadingHandler(new RefreshLoadLayout.LoadingHandler() {
             @Override
@@ -55,7 +62,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         ArrayAdapter<String> arrayAdapter= (ArrayAdapter<String>) listView.getAdapter();
-                        arrayAdapter.add("tt");
+                        arrayAdapter.add("a new data");
+                        arrayAdapter.add("a new data");
                         refreshLoadLayout.endLoading();
                     }
                 }, 2000);
@@ -69,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
     private void fillListView() {
         List<String> strings = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
-            strings.add(Integer.toString(i));
+            strings.add("https://github.com/excitedhaha/RefreshLoadLayout");
         }
         ArrayAdapter<String> stringArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, strings);
         listView.setAdapter(stringArrayAdapter);
@@ -89,10 +97,14 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(this,RecyclerViewActivity.class));
                 return true;
             case R.id.ban_refresh:
-                refreshLoadLayout.setRefreshingEnabled(false);
+                boolean enable=item.isChecked();
+                item.setChecked(!enable);
+                refreshLoadLayout.setRefreshingEnabled(enable);
                 return true;
             case R.id.ban_load:
-                refreshLoadLayout.setLoadingEnabled(false);
+                boolean checked=item.isChecked();
+                item.setChecked(!checked);
+                refreshLoadLayout.setLoadingEnabled(checked);
                 return true;
         }
 
