@@ -32,8 +32,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         listView = (ListView) findViewById(R.id.listView);
         refreshLoadLayout = (RefreshLoadLayout) findViewById(R.id.refreshLayout);
-        refreshLoadLayout.setRefreshingEnabled(true);
-        refreshLoadLayout.setLoadingEnabled(true);
         refreshLoadLayout.setOnRefreshListener(new RefreshLoadLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {

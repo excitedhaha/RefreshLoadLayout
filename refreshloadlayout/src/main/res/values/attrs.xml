@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="RefreshLoadLayout">
+        <attr name="refreshingEnabled" format="boolean"/>
+        <attr name="loadingEnabled" format="boolean"/>
+        <attr name="triggerDistance" format="dimension"/>
+    </declare-styleable>
+</resources>

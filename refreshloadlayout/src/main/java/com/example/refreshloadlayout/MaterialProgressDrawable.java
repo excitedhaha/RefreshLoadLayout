@@ -288,7 +288,7 @@ class MaterialProgressDrawable extends Drawable implements Animatable {
     public void stop() {
         mParent.clearAnimation();
         setRotation(0);
-//        mRing.setShowArrow(false);
+        mRing.setShowArrow(false);
         mRing.setColorIndex(0);
         mRing.resetOriginals();
     }

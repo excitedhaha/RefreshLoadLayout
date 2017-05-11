@@ -36,7 +36,7 @@ import android.view.animation.Animation;
 /**
  * An Material Style Progress View
  */
-public class ProgressView extends AppCompatImageView  {
+public class ProgressView extends AppCompatImageView {
 
     public static final int DEFAULT_CIRCLE_BG_LIGHT = 0xFFFAFAFA;
     public static final int DEFAULT_CIRCLE_COLOR = 0xFFF00000;
@@ -72,11 +72,11 @@ public class ProgressView extends AppCompatImageView  {
     private int[] mColors = new int[]{Color.BLACK};
 
     public ProgressView(Context context) {
-        this(context,null);
+        this(context, null);
     }
 
     public ProgressView(Context context, AttributeSet attributeSet) {
-        super(context,attributeSet);
+        super(context, attributeSet);
         init(context);
     }
 
@@ -154,7 +154,7 @@ public class ProgressView extends AppCompatImageView  {
                         KEY_SHADOW_COLOR);
                 final int padding = mShadowRadius;
                 // set padding so the inner image sits correctly within the shadow.
-                setPadding(padding, padding , padding, padding );
+                setPadding(padding, padding, padding, padding);
             }
             mBgCircle.getPaint().setColor(mBackGroundColor);
             setBackgroundDrawable(mBgCircle);
@@ -336,7 +336,7 @@ public class ProgressView extends AppCompatImageView  {
         }
     }
 
-    public void setArrowScale(float scale){
+    public void setArrowScale(float scale) {
         mProgressDrawable.setArrowScale(scale);
     }
 

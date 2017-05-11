@@ -1,7 +1,7 @@
 package com.example.refreshloadlayout;
 
 import android.content.Context;
-import android.nfc.NfcEvent;
+import android.content.res.TypedArray;
 import android.support.annotation.Nullable;
 import android.support.v4.view.NestedScrollingParent;
 import android.support.v4.view.NestedScrollingParentHelper;
@@ -90,7 +90,16 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
     public RefreshLoadLayout(Context context, AttributeSet attrs) {
         super(context, attrs);
+        parseAttributeSet(context, attrs);
         init(context);
+    }
+
+    private void parseAttributeSet(Context context, AttributeSet attrs) {
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.RefreshLoadLayout);
+        refreshingEnabled = typedArray.getBoolean(R.styleable.RefreshLoadLayout_refreshingEnabled, true);
+        loadingEnabled = typedArray.getBoolean(R.styleable.RefreshLoadLayout_loadingEnabled, false);
+        triggerDistance = typedArray.getInt(R.styleable.RefreshLoadLayout_triggerDistance, 0);
+        typedArray.recycle();
     }
 
 
@@ -157,48 +166,47 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mTarget == null) {
             return;
         }
-        int paddingLeft=getPaddingLeft();
-        int paddingTop=getPaddingTop();
-        int paddingRight=getPaddingRight();
-        int paddingBottom=getPaddingBottom();
+        int paddingLeft = getPaddingLeft();
+        int paddingTop = getPaddingTop();
+        int paddingRight = getPaddingRight();
+        int paddingBottom = getPaddingBottom();
         int width = getMeasuredWidth();
         int height = getMeasuredHeight();
-
 
 
         mTarget.layout(paddingLeft, paddingTop, width - paddingRight, height - paddingBottom);
         if (mRefreshIndicator != null) {
             int refreshViewHeight = ((View) mRefreshIndicator).getMeasuredHeight();
             int refreshViewWidth = ((View) mRefreshIndicator).getMeasuredWidth();
-            LayoutParams layoutParams=((View) mRefreshIndicator).getLayoutParams();
-            int marginTop=0;
-            int marginBottom=0;
-            if (layoutParams!=null&&layoutParams instanceof MarginLayoutParams){
-                marginTop=((MarginLayoutParams) layoutParams).topMargin;
-                marginBottom=((MarginLayoutParams) layoutParams).bottomMargin;
+            LayoutParams layoutParams = ((View) mRefreshIndicator).getLayoutParams();
+            int marginTop = 0;
+            int marginBottom = 0;
+            if (layoutParams != null && layoutParams instanceof MarginLayoutParams) {
+                marginTop = ((MarginLayoutParams) layoutParams).topMargin;
+                marginBottom = ((MarginLayoutParams) layoutParams).bottomMargin;
             }
-            int left= width / 2 - refreshViewWidth / 2;
-            int bottom=-marginBottom;
-            int top=bottom-refreshViewHeight-marginTop;
-            int right=left + refreshViewWidth ;
+            int left = width / 2 - refreshViewWidth / 2;
+            int bottom = -marginBottom;
+            int top = bottom - refreshViewHeight - marginTop;
+            int right = left + refreshViewWidth;
 
-            ((View) mRefreshIndicator).layout(left,top, right,  bottom);
+            ((View) mRefreshIndicator).layout(left, top, right, bottom);
         }
         if (mLoadMoreIndicator != null) {
             loadIndicatorHeight = ((View) mLoadMoreIndicator).getMeasuredHeight();
             int loadIndicatorWidth = ((View) mLoadMoreIndicator).getMeasuredWidth();
-            LayoutParams layoutParams=((View) mLoadMoreIndicator).getLayoutParams();
-            int marginTop=0;
-            int marginBottom=0;
-            if (layoutParams!=null&&layoutParams instanceof MarginLayoutParams){
-                marginTop=((MarginLayoutParams) layoutParams).topMargin;
-                marginBottom=((MarginLayoutParams) layoutParams).bottomMargin;
+            LayoutParams layoutParams = ((View) mLoadMoreIndicator).getLayoutParams();
+            int marginTop = 0;
+            int marginBottom = 0;
+            if (layoutParams != null && layoutParams instanceof MarginLayoutParams) {
+                marginTop = ((MarginLayoutParams) layoutParams).topMargin;
+                marginBottom = ((MarginLayoutParams) layoutParams).bottomMargin;
             }
-            int left= width / 2 - loadIndicatorWidth / 2;
-            int top=height+marginTop;
-            int right=left + loadIndicatorWidth ;
-            int bottom=top+loadIndicatorHeight+marginBottom;
-            ((View) mLoadMoreIndicator).layout(left, top,right,bottom);
+            int left = width / 2 - loadIndicatorWidth / 2;
+            int top = height + marginTop;
+            int right = left + loadIndicatorWidth;
+            int bottom = top + loadIndicatorHeight + marginBottom;
+            ((View) mLoadMoreIndicator).layout(left, top, right, bottom);
         }
     }
 
@@ -305,9 +313,9 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         scrollTo(0, -offset);
         Log.d(TAG, "dy:" + y + " scrollY:" + getScrollY() + " offset:" + offset);
         if (offset < triggerDistance) {
-            mRefreshIndicator.onPullDown(this,offset);
+            mRefreshIndicator.onPullDown(this, offset);
         } else {
-            mRefreshIndicator.onQualifiedRefreshing(this,offset);
+            mRefreshIndicator.onQualifiedRefreshing(this, offset);
         }
     }
 
@@ -454,7 +462,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
 
     public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
-        if (refreshIndicator == null ||refreshIndicator==mRefreshIndicator) {
+        if (refreshIndicator == null || refreshIndicator == mRefreshIndicator) {
             return;
         }
         if (!(refreshIndicator instanceof View)) {
@@ -463,7 +471,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mRefreshIndicator != null) {
             removeView((View) mRefreshIndicator);
         }
-        addView((View) refreshIndicator, new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
+        addView((View) refreshIndicator, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         mRefreshIndicator = refreshIndicator;
     }
 
@@ -472,7 +480,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     }
 
     public void setLoadingIndicator(LoadMoreIndicator loadingIndicator) {
-        if (loadingIndicator == null||loadingIndicator==mLoadMoreIndicator) {
+        if (loadingIndicator == null || loadingIndicator == mLoadMoreIndicator) {
             return;
         }
         if (!(loadingIndicator instanceof View)) {
@@ -481,7 +489,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mLoadMoreIndicator != null) {
             removeView((View) mLoadMoreIndicator);
         }
-        addView((View) loadingIndicator, new LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT));
+        addView((View) loadingIndicator, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         mLoadMoreIndicator = loadingIndicator;
     }
 
