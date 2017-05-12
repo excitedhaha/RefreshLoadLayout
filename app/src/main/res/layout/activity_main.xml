@@ -11,6 +11,7 @@
     <com.github.refreshloadlayout.RefreshLoadLayout
         android:id="@+id/refreshLayout"
         app:loadingEnabled="true"
+        app:refreshingEnabled="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <ListView

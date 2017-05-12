@@ -506,6 +506,14 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         this.mLoadingHandler = loadingHandler;
     }
 
+    public RefreshIndicator getRefreshIndicator() {
+        return mRefreshIndicator;
+    }
+
+    public LoadMoreIndicator getLoadMoreIndicator() {
+        return mLoadMoreIndicator;
+    }
+
     public boolean isLoadingMore() {
         return mLoadingMore;
     }
