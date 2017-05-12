@@ -1,16 +1,16 @@
 # RefreshLoadLayout
-A library for Android , swipe to refresh or load more
+A library for Android , swipe to refresh or load more  
 [![License](https://img.shields.io/badge/license-Apache%202-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Download](https://api.bintray.com/packages/jellybean/RefreshLoadLayout/com.github.refreshloadlayout/images/download.svg) ](https://bintray.com/jellybean/RefreshLoadLayout/com.github.refreshloadlayout/_latestVersion)
 
 #使用介绍
-- 添加 gralde 依赖
-compile 'com.github.refreshloadlayout:refreshloadlayout:latest.release'
-或者
-compile 'com.github.refreshloadlayout:refreshloadlayout:0.0.1'   指定具体版本
-如果收到支持库不统一的警告，可修改为 compile ('com.github.refreshloadlayout:refreshloadlayout:latest.release'){exclude group: 'com.android.support'}
+- 添加 gralde 依赖  
+`compile 'com.github.refreshloadlayout:refreshloadlayout:latest.release'`  
+`compile 'com.github.refreshloadlayout:refreshloadlayout:0.0.1' `  指定具体版本
+如果收到支持库不统一的警告，可修改为  `compile ('com.github.refreshloadlayout:refreshloadlayout:latest.release'){exclude group: 'com.android.support'}`
 
 - 在布局中使用
+
         <com.github.refreshloadlayout.RefreshLoadLayout
         android:id="@+id/refreshLayout"
         app:loadingEnabled="true"
