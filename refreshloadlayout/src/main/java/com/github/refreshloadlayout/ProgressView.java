@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.refreshloadlayout;
+package com.github.refreshloadlayout;
 
 import android.content.Context;
 import android.content.res.Resources;

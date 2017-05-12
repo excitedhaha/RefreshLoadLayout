@@ -1,4 +1,4 @@
-package com.example.jellybean.refreshloadlayout;
+package com.github.jellybean.refreshloadlayout;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -6,15 +6,11 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.view.animation.RotateAnimation;
 import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
 import android.widget.ListView;
 
-import com.example.refreshloadlayout.MaterialIndicator;
-import com.example.refreshloadlayout.RefreshLoadLayout;
+import com.github.refreshloadlayout.MaterialIndicator;
+import com.github.refreshloadlayout.RefreshLoadLayout;
 
 import java.util.ArrayList;
 import java.util.List;

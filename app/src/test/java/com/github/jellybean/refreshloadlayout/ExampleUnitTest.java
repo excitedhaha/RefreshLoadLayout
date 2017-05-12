@@ -1,4 +1,4 @@
-package com.example.jellybean.refreshloadlayout;
+package com.github.jellybean.refreshloadlayout;
 
 import org.junit.Test;
 

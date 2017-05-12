@@ -1,4 +1,9 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
+
+group = GROUP
+version = VERSION_NAME
 
 android {
     compileSdkVersion 25
@@ -8,7 +13,7 @@ android {
         minSdkVersion 15
         targetSdkVersion 25
         versionCode 1
-        versionName "1.0"
+        versionName VERSION_NAME
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -19,6 +24,46 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+
+
+bintray {
+    user = 'jellybean'
+    key = '45ea0ad12067a664f2ef45306d4ca6556c437eee'
+    pkg {
+        repo = 'RefreshLoadLayout'
+        name = GROUP
+        userOrg = 'jellybean'
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/excitedhaha/RefreshLoadLayout.git'
+    }
+    configurations = ['archives']
+}
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+task generateJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath()
+            .join(File.pathSeparator))
+}
+
+
+
+task generateJavadocsJar(type: Jar) {
+    from generateJavadocs.destinationDir
+    classifier 'javadoc'
+}
+
+generateJavadocsJar.dependsOn generateJavadocs
+
+artifacts {
+    archives generateJavadocsJar
+    archives generateSourcesJar
 }
 
 dependencies {

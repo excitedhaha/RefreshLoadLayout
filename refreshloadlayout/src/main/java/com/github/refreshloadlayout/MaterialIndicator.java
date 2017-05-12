@@ -1,11 +1,9 @@
-package com.example.refreshloadlayout;
+package com.github.refreshloadlayout;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
 
 /**
  *  A material-style View ,both as RefreshIndicator and LoadMoreIndicator

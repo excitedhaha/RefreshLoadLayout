@@ -1,4 +1,4 @@
-package com.example.refreshloadlayout;
+package com.github.refreshloadlayout;
 
 import org.junit.Test;
 

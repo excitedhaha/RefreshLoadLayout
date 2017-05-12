@@ -1,4 +1,4 @@
-package com.example.jellybean.refreshloadlayout;
+package com.github.jellybean.refreshloadlayout;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,7 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.example.refreshloadlayout.RefreshLoadLayout;
+import com.github.refreshloadlayout.RefreshLoadLayout;
 
 import java.util.ArrayList;
 import java.util.List;

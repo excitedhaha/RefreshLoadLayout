@@ -1,4 +1,4 @@
-package com.example.refreshloadlayout;
+package com.github.refreshloadlayout;
 
 /**
  * 刷新指示器，子类可以根据回调方法适当地调整视图显示

@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="70dp">
-    <com.example.refreshloadlayout.ProgressView
+    <com.github.refreshloadlayout.ProgressView
         android:id="@+id/progress_view"
         android:layout_gravity="center"
         android:layout_width="wrap_content"

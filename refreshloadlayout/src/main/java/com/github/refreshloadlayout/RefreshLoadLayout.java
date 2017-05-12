@@ -1,4 +1,4 @@
-package com.example.refreshloadlayout;
+package com.github.refreshloadlayout;
 
 import android.content.Context;
 import android.content.res.TypedArray;
@@ -436,6 +436,10 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
     public void setOnTargetScrollUpCallback(OnTargetScrollUpCallback callback) {
         mOnTargetScrollUpCallback = callback;
+    }
+
+    public void setTriggerDistance(int triggerDistance) {
+        this.triggerDistance = triggerDistance;
     }
 
     public boolean isRefreshingEnabled() {

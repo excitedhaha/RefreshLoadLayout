@@ -1,4 +1,4 @@
-package com.example.refreshloadlayout;
+package com.github.refreshloadlayout;
 
 /**
  * 加载更多指示器
