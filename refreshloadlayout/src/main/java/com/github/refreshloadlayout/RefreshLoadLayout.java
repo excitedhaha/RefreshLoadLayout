@@ -1,5 +1,8 @@
 package com.github.refreshloadlayout;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.support.annotation.Nullable;
@@ -15,6 +18,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.AbsListView;
 
 import java.lang.reflect.Field;
@@ -57,15 +61,19 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     private boolean mLoadingMore;
 
     /**
-     * 是否启用下拉刷新
+     * 是否启用下拉刷新，默认开启
      */
     private boolean refreshingEnabled;
 
     /**
-     * 是否启用加载更多
+     * 是否启用加载更多，默认关闭
      */
     private boolean loadingEnabled;
 
+    /**
+     * 加载结束后是否需要将目标视图下滑一定距离,默认开启
+     */
+    private boolean scrollDownAfterLoading;
 
     /**
      * 触发刷新所需的滑动距离,默认为刷新视图的高度
@@ -99,6 +107,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         refreshingEnabled = typedArray.getBoolean(R.styleable.RefreshLoadLayout_refreshingEnabled, true);
         loadingEnabled = typedArray.getBoolean(R.styleable.RefreshLoadLayout_loadingEnabled, false);
         triggerDistance = typedArray.getInt(R.styleable.RefreshLoadLayout_triggerDistance, 0);
+        scrollDownAfterLoading = typedArray.getBoolean(R.styleable.RefreshLoadLayout_scrollDownAfterLoading, true);
         typedArray.recycle();
     }
 
@@ -320,10 +329,30 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     }
 
     /**
-     * 复位
+     * 平滑地滑动到原始位置
      */
     private void scrollBack() {
-        scrollTo(0, 0);
+        scrollBack(null);
+    }
+
+    /**
+     * 平滑地滑动到原始位置
+     */
+    private void scrollBack(Animator.AnimatorListener animatorListener) {
+        int scrollY = getScrollY();
+        ValueAnimator valueAnimator = ValueAnimator.ofInt(scrollY, 0);
+        valueAnimator.setInterpolator(new DecelerateInterpolator());
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int currentY = (int) animation.getAnimatedValue();
+                scrollTo(0, currentY);
+            }
+        });
+        if (animatorListener!=null){
+            valueAnimator.addListener(animatorListener);
+        }
+        valueAnimator.start();
     }
 
     @Override
@@ -427,7 +456,46 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         if (mOnTargetScrollDownCallback != null) {
             return mOnTargetScrollDownCallback.canChildScrollDown(this, mTarget);
         }
+        if (mTarget instanceof RecyclerView) {
+            return !isRecyclerViewToBottom((RecyclerView) mTarget);
+        }
         return ViewCompat.canScrollVertically(mTarget, 1);
+    }
+
+    /**
+     * recyclerView 是否已经滑动到底部
+     *
+     * @param recyclerView
+     * @return
+     */
+    private boolean isRecyclerViewToBottom(RecyclerView recyclerView) {
+        if (recyclerView != null) {
+            RecyclerView.LayoutManager manager = recyclerView.getLayoutManager();
+            if (manager == null || manager.getItemCount() == 0) {
+                return false;
+            }
+            if (manager instanceof LinearLayoutManager) {
+                // 处理item高度超过一屏幕时的情况
+                View lastVisibleChild = recyclerView.getChildAt(recyclerView.getChildCount() - 1);
+                if (lastVisibleChild != null && lastVisibleChild.getMeasuredHeight() >= recyclerView.getMeasuredHeight()) {
+                    return !ViewCompat.canScrollVertically(recyclerView, 1);
+                }
+                LinearLayoutManager layoutManager = (LinearLayoutManager) manager;
+                if (layoutManager.findLastCompletelyVisibleItemPosition() == layoutManager.getItemCount() - 1) {
+                    return true;
+                }
+            } else if (manager instanceof StaggeredGridLayoutManager) {
+                StaggeredGridLayoutManager layoutManager = (StaggeredGridLayoutManager) manager;
+                int[] out = layoutManager.findLastCompletelyVisibleItemPositions(null);
+                int lastPosition = layoutManager.getItemCount() - 1;
+                for (int position : out) {
+                    if (position == lastPosition) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public void setOnTargetScrollDownCallback(OnTargetScrollDownCallback callback) {
@@ -464,19 +532,20 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         }
     }
 
+    /**
+     * @return 是否需要在加载结束时将目标视图下滑一定距离
+     */
+    public boolean isScrollDownAfterLoading() {
+        return scrollDownAfterLoading;
+    }
 
-    public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
-        if (refreshIndicator == null || refreshIndicator == mRefreshIndicator) {
-            return;
-        }
-        if (!(refreshIndicator instanceof View)) {
-            throw new IllegalArgumentException("RefreshIndicator must be a view");
-        }
-        if (mRefreshIndicator != null) {
-            removeView((View) mRefreshIndicator);
-        }
-        addView((View) refreshIndicator, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
-        mRefreshIndicator = refreshIndicator;
+    /**
+     * 设置是否需要在加载结束时将目标视图下滑一定距离
+     *
+     * @param scrollDownAfterLoading
+     */
+    public void setScrollDownAfterLoading(boolean scrollDownAfterLoading) {
+        this.scrollDownAfterLoading = scrollDownAfterLoading;
     }
 
     public void setOnRefreshListener(OnRefreshListener onRefreshListener) {
@@ -510,6 +579,20 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
         return mRefreshIndicator;
     }
 
+    public void setRefreshIndicator(RefreshIndicator refreshIndicator) {
+        if (refreshIndicator == null || refreshIndicator == mRefreshIndicator) {
+            return;
+        }
+        if (!(refreshIndicator instanceof View)) {
+            throw new IllegalArgumentException("RefreshIndicator must be a view");
+        }
+        if (mRefreshIndicator != null) {
+            removeView((View) mRefreshIndicator);
+        }
+        addView((View) refreshIndicator, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        mRefreshIndicator = refreshIndicator;
+    }
+
     public LoadMoreIndicator getLoadMoreIndicator() {
         return mLoadMoreIndicator;
     }
@@ -537,11 +620,11 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
             return;
         }
         refreshingEnabled = true;
+        mRefreshing = true;
+        scrollTo(0, -triggerDistance);
         if (mRefreshIndicator != null) {
             mRefreshIndicator.onStartRefreshing(this);
         }
-        scrollTo(0, -triggerDistance);
-        mRefreshing = true;
         if (mOnRefreshListener != null) {
             mOnRefreshListener.onRefresh();
         }
@@ -589,13 +672,25 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
      * 结束加载更多
      */
     public void endLoading() {
-        if (mLoadingMore) {
-            mLoadingMore = false;
+        if (!mLoadingMore){
+            return;
+        }
+        mLoadingMore = false;
+
+        if (scrollDownAfterLoading) {
+            AnimatorListenerAdapter animatorListenerAdapter=new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    scrollChildToNextItem();
+                }
+            };
+            scrollBack(animatorListenerAdapter);
+        }else {
             scrollBack();
-            scrollChildToNextItem();
-            if (mLoadMoreIndicator != null) {
-                mLoadMoreIndicator.onEndLoading(this);
-            }
+        }
+        if (mLoadMoreIndicator != null) {
+            mLoadMoreIndicator.onEndLoading(this);
         }
     }
 
@@ -617,7 +712,7 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
             RecyclerView.LayoutManager layoutManager = ((RecyclerView) mTarget).getLayoutManager();
             int lastPosition = 1;
             if (layoutManager instanceof LinearLayoutManager) {
-                lastPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition() + 1;
+                lastPosition = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
             } else if (layoutManager instanceof StaggeredGridLayoutManager) {
                 int[] positions = ((StaggeredGridLayoutManager) layoutManager).findLastVisibleItemPositions(null);
                 for (int position : positions) {

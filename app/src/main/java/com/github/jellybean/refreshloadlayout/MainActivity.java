@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
@@ -37,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         refreshLoadLayout.endRefreshing();
                     }
-                }, 3000);
+                }, 300);
             }
         });
         MaterialIndicator materialIndicator=new MaterialIndicator(this);
@@ -61,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                         arrayAdapter.add("a new data");
                         refreshLoadLayout.endLoading();
                     }
-                }, 2000);
+                }, 200);
 
             }
         });

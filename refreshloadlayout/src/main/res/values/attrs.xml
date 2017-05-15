@@ -4,5 +4,6 @@
         <attr name="refreshingEnabled" format="boolean"/>
         <attr name="loadingEnabled" format="boolean"/>
         <attr name="triggerDistance" format="dimension"/>
+        <attr name="scrollDownAfterLoading" format="boolean"/>
     </declare-styleable>
 </resources>

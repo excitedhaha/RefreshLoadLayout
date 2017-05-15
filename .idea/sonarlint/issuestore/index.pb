@@ -64,3 +64,5 @@ z
 Japp/src/main/java/com/github/jellybean/refreshloadlayout/MainActivity.java,8/c/8c1b7933683a450c09bee575d893fcade759364a
 ƒ
 Srefreshloadlayout/src/main/java/com/github/refreshloadlayout/RefreshLoadLayout.java,c/2/c2a5bdb8b27e3e319a8f21dda80604bc90adfb2a
+^
+..idea/markdown-navigator/profiles_settings.xml,c/5/c553a33182a8928cd5760d212e343bd13f573c9b
