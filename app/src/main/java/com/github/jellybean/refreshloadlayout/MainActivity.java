@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         refreshLoadLayout.endRefreshing();
                     }
-                }, 300);
+                }, 2000);
             }
         });
         MaterialIndicator materialIndicator=new MaterialIndicator(this);
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                         arrayAdapter.add("a new data");
                         refreshLoadLayout.endLoading();
                     }
-                }, 200);
+                }, 2000);
 
             }
         });
