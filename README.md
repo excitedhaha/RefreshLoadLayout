@@ -5,9 +5,8 @@ A library for Android , swipe to refresh or load more
 
  #使用说明
 - 添加 gralde 依赖  
-`compile 'com.github.refreshloadlayout:refreshloadlayout:latest.release'`  
-`compile 'com.github.refreshloadlayout:refreshloadlayout:0.0.2' `  指定具体版本
-如果收到支持库不统一的警告，可修改为  `compile ('com.github.refreshloadlayout:refreshloadlayout:latest.release'){exclude group: 'com.android.support'}`
+`compile 'com.github.refreshloadlayout:refreshloadlayout:0.0.2' `  
+如果收到支持库不统一的警告，可修改为  `compile ('com.github.refreshloadlayout:refreshloadlayout:0.0.2'){exclude group: 'com.android.support'}`
 
 - 在布局中使用
 
