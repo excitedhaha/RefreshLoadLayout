@@ -3,10 +3,10 @@ A library for Android , swipe to refresh or load more
 [![License](https://img.shields.io/badge/license-Apache%202-green.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Download](https://api.bintray.com/packages/jellybean/RefreshLoadLayout/com.github.refreshloadlayout/images/download.svg) ](https://bintray.com/jellybean/RefreshLoadLayout/com.github.refreshloadlayout/_latestVersion)
 
-#使用介绍
+ #使用说明
 - 添加 gralde 依赖  
 `compile 'com.github.refreshloadlayout:refreshloadlayout:latest.release'`  
-`compile 'com.github.refreshloadlayout:refreshloadlayout:0.0.1' `  指定具体版本
+`compile 'com.github.refreshloadlayout:refreshloadlayout:0.0.2' `  指定具体版本
 如果收到支持库不统一的警告，可修改为  `compile ('com.github.refreshloadlayout:refreshloadlayout:latest.release'){exclude group: 'com.android.support'}`
 
 - 在布局中使用
@@ -39,12 +39,12 @@ A library for Android , swipe to refresh or load more
         });
 - 上滑加载
 
-        refreshLoadLayout.setLoadingHandler(new RefreshLoadLayout.LoadingHandler() {
+      refreshLoadLayout.setLoadingHandler(new RefreshLoadLayout.LoadingHandler() {
             @Override
             public boolean canLoadMore() {
                 return listView.getCount()<26;
             }
-
+    
             @Override
             public void onLoading() {
                 refreshLoadLayout.postDelayed(new Runnable() {
@@ -56,10 +56,12 @@ A library for Android , swipe to refresh or load more
                         refreshLoadLayout.endLoading();
                     }
                 }, 2000);
-
+    
             }
         });
 其中 canLoadMore() 方法返回当前是否可以进行加载，即是否还有更多内容。
+可设置是否需要在加载结束后将内容视图下滑一定距离,默认开启:
+`refreshLoadLayout.setScrollDownAfterLoading(false);`
 
 - 启用/关闭功能
 默认开启下拉刷新关闭上滑加载更多，可以在xml中指定或者在代码中修改。
