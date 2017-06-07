@@ -751,9 +751,11 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     private void setRecyclerViewOnScrollListener(RecyclerView recyclerView) {
         if (recyclerView != null) {
             if (recyclerScrollListener == null) {
-                recyclerScrollListener = new RecyclerScrollListener();
+                recyclerScrollListener = new RecyclerScrollListener(recyclerView);
+                recyclerView.addOnScrollListener(recyclerScrollListener);
+            }else if (recyclerScrollListener.getRecyclerView()!=recyclerView){
+                recyclerView.addOnScrollListener(recyclerScrollListener);
             }
-            recyclerView.addOnScrollListener(recyclerScrollListener);
         }
     }
 
@@ -768,8 +770,10 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
                 if (absListViewScrollListener == null) {
                     absListViewScrollListener = new AbsListViewScrollListener();
                 }
-                absListViewScrollListener.setOriginalListener(onScrollListener);
-                absListView.setOnScrollListener(absListViewScrollListener);
+                if (onScrollListener != absListViewScrollListener){
+                    absListViewScrollListener.setOriginalListener(onScrollListener);
+                    absListView.setOnScrollListener(absListViewScrollListener);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "反射获取AbsListView#OnScrollListener异常", e);
             }
@@ -822,6 +826,12 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
     }
 
     private class RecyclerScrollListener extends RecyclerView.OnScrollListener {
+        private RecyclerView recyclerView;
+
+        private RecyclerScrollListener(RecyclerView recyclerView) {
+            this.recyclerView = recyclerView;
+        }
+
         /**
          * 是否忽略下此次滑动事件,避免在刚结束加载并滑动一个单元的距离后
          * {@link #scrollChildToNextItem()}连续触发加载
@@ -830,6 +840,10 @@ public class RefreshLoadLayout extends ViewGroup implements NestedScrollingParen
 
         void setSwallowNextScroll(boolean swallowNextScroll) {
             this.swallowNextScroll = swallowNextScroll;
+        }
+
+        RecyclerView getRecyclerView() {
+            return recyclerView;
         }
 
         @Override
