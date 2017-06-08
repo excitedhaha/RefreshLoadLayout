@@ -68,3 +68,5 @@ Srefreshloadlayout/src/main/java/com/github/refreshloadlayout/RefreshLoadLayout.
 ..idea/markdown-navigator/profiles_settings.xml,c/5/c553a33182a8928cd5760d212e343bd13f573c9b
 T
 $refreshloadlayout/proguard-rules.pro,c/b/cb2e89071ab41b04325b0efad68f23adfadfa6d5
+X
+(gradle/wrapper/gradle-wrapper.properties,f/b/fbe448ebfc3eb2d4e308f6b8b043666f5b57235e

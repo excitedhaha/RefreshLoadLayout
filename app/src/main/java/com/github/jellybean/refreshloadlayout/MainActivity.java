@@ -102,8 +102,9 @@ public class MainActivity extends AppCompatActivity {
                 item.setChecked(!checked);
                 refreshLoadLayout.setLoadingEnabled(checked);
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
 
-        return super.onOptionsItemSelected(item);
     }
 }
